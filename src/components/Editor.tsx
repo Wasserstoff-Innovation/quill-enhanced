@@ -8,20 +8,19 @@ import { DiffViewer } from './DiffViewer';
 import { KeyboardShortcutsManager } from '../utils/keyboardShortcuts';
 import { AutosavePlugin } from '../plugins/Autosave';
 import { LineNumbersPlugin } from '../plugins/LineNumbers';
-import { MarkdownPlugin } from '../plugins/MarkdownPlugin';
+// import { MarkdownPlugin } from '../plugins/MarkdownPlugin';
 import { deltaToMarkdown, fromMarkdown } from '../utils/markdownUtils';
 import { exportToDocx, exportToPDF } from '../utils/exportUtils';
 
 const Delta = Quill.import('delta');
-type Delta = typeof Delta;
 
 interface EditorProps {
-  initialContent?: string | Delta;
-  value?: Delta;
+  initialContent?: string | any;
+  value?: any;
   documentId?: string;
   metadata?: Record<string, any>;
   version?: number;
-  onContentChange?: (delta: Delta) => void;
+  onContentChange?: (delta: any) => void;
   onMetadataChange?: (metadata: Record<string, any>) => void;
   trackChanges?: boolean;
   currentUser?: string;
@@ -46,7 +45,7 @@ interface EditorProps {
 
 export interface EditorRef {
   getContent: (format?: 'html' | 'delta' | 'text' | 'markdown') => any;
-  setContent: (content: string | Delta, format?: 'html' | 'delta' | 'text' | 'markdown') => void;
+  setContent: (content: string | any, format?: 'html' | 'delta' | 'text' | 'markdown') => void;
   focus: () => void;
   blur: () => void;
   enable: () => void;
@@ -88,7 +87,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
   marginTop = '1in',
   showLineNumbers = false,
   enableMarkdown = false,
-  placeholder,
+  placeholder = 'Start typing...',
   onSave,
   onChange,
   className = '',
@@ -125,7 +124,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
         new LineNumbersPlugin(quill);
       }
 
-      if (onSave) {
+      if (onSave && autosave) {
         new AutosavePlugin(quill, {
           interval: autosaveInterval,
           onSave
@@ -150,7 +149,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
           enabled: true,
           currentUser,
           onChangesUpdate: (changes: Change[]) => {
-            // Handle changes update
+            onChangesUpdate?.(changes);
           }
         });
         setTrackChangesPlugin(plugin);
@@ -183,7 +182,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
         }
       };
     }
-  }, [documentId, onSave, onContentChange, readOnly, showLineNumbers, autosaveInterval]);
+  }, [documentId, onSave, onContentChange, readOnly, showLineNumbers, autosaveInterval, trackChanges, currentUser, onChangesUpdate, autosave, value, initialContent, placeholder, mode]);
 
   // Update content when value prop changes
   useEffect(() => {
@@ -200,20 +199,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
         currentUser
       });
     }
-  }, [trackChanges, currentUser]);
-
-  // Handle markdown mode toggle
-  const handleModeToggle = () => {
-    if (mode === 'wysiwyg') {
-      setMode('markdown');
-      setMarkdownContent(deltaToMarkdown(quillRef.current?.getContents() || new Delta()));
-    } else {
-      setMode('wysiwyg');
-      if (quillRef.current) {
-        quillRef.current.setContents(fromMarkdown(markdownContent));
-      }
-    }
-  };
+  }, [trackChanges, currentUser, trackChangesPlugin]);
 
   // Handle export
   const handleExport = async (format: 'docx' | 'pdf') => {
@@ -279,7 +265,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
           quillRef.current.setContents(fromMarkdown(content as string));
           break;
         default:
-          quillRef.current.setContents(content as Delta);
+          quillRef.current.setContents(content as any);
       }
     },
     focus: () => quillRef.current?.focus(),
@@ -305,7 +291,10 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
     exportDocx: () => handleExport('docx'),
     exportPDF: () => handleExport('pdf'),
     exportHTML: () => quillRef.current?.root.innerHTML || '',
-    exportMarkdown: () => deltaToMarkdown(quillRef.current?.getContents() || new Delta())
+    exportMarkdown: () => {
+      const content = quillRef.current?.getContents();
+      return content ? deltaToMarkdown(content) : '';
+    }
   }));
 
   return (

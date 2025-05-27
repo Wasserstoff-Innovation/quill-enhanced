@@ -1,7 +1,7 @@
 import type { DeltaOperation } from 'quill';
 import Quill from 'quill';
-import saveAs from 'file-saver';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, UnderlineType, SectionType } from 'docx';
+import * as FileSaver from 'file-saver';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, UnderlineType } from 'docx';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toMarkdown } from './markdownUtils';
@@ -113,7 +113,7 @@ export async function exportToDocx(delta: DeltaType, filename: string = 'documen
     // Save the file if we're in a browser environment
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      saveAs(blob, filename);
+      FileSaver.saveAs(blob, filename);
     }
     
     return buffer as unknown as ArrayBuffer;
@@ -203,7 +203,7 @@ export const exportToWord = async (delta: DeltaType, filename: string = 'documen
 
   const buffer = await Packer.toBuffer(doc);
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-  saveAs(blob, filename);
+  FileSaver.saveAs(blob, filename);
 };
 
 /**
@@ -234,6 +234,109 @@ export const deltaToText = (delta: DeltaType): string => {
  * Helper function to convert Delta to HTML
  */
 export const deltaToHtml = (delta: DeltaType): string => {
-  // Implementation will depend on your Delta to HTML conversion logic
-  return ''; // TODO: Implement
-}; 
+  let html = '';
+  // let currentAttributes: any = {}; // Currently unused but kept for future implementation
+
+  delta.ops.forEach((op: any) => {
+    if (typeof op.insert === 'string') {
+      const text = op.insert;
+      const attributes = op.attributes || {};
+
+      // Handle line breaks and paragraphs
+      if (text.includes('\n')) {
+        const lines = text.split('\n');
+        lines.forEach((line: string, index: number) => {
+          if (line || index === 0) {
+            html += formatTextWithAttributes(line, attributes);
+          }
+          if (index < lines.length - 1) {
+            html += getBlockElement(attributes);
+          }
+        });
+      } else {
+        html += formatTextWithAttributes(text, attributes);
+      }
+    } else if (typeof op.insert === 'object') {
+      // Handle embeds (images, videos, etc.)
+      html += formatEmbed(op.insert);
+    }
+  });
+
+  return html;
+};
+
+/**
+ * Format text with inline attributes
+ */
+function formatTextWithAttributes(text: string, attributes: any): string {
+  let formattedText = text;
+
+  // Apply inline formatting
+  if (attributes.bold) {
+    formattedText = `<strong>${formattedText}</strong>`;
+  }
+  if (attributes.italic) {
+    formattedText = `<em>${formattedText}</em>`;
+  }
+  if (attributes.underline) {
+    formattedText = `<u>${formattedText}</u>`;
+  }
+  if (attributes.strike) {
+    formattedText = `<s>${formattedText}</s>`;
+  }
+  if (attributes.code) {
+    formattedText = `<code>${formattedText}</code>`;
+  }
+  if (attributes.link) {
+    formattedText = `<a href="${attributes.link}">${formattedText}</a>`;
+  }
+  if (attributes.color) {
+    formattedText = `<span style="color: ${attributes.color}">${formattedText}</span>`;
+  }
+  if (attributes.background) {
+    formattedText = `<span style="background-color: ${attributes.background}">${formattedText}</span>`;
+  }
+  if (attributes.size) {
+    formattedText = `<span style="font-size: ${attributes.size}">${formattedText}</span>`;
+  }
+
+  return formattedText;
+}
+
+/**
+ * Get block element based on attributes
+ */
+function getBlockElement(attributes: any): string {
+  if (attributes.header) {
+    return `</h${attributes.header}><h${attributes.header}>`;
+  }
+  if (attributes.blockquote) {
+    return '</blockquote><blockquote>';
+  }
+  if (attributes.list) {
+    const listType = attributes.list === 'ordered' ? 'ol' : 'ul';
+    return `</li></${listType}><${listType}><li>`;
+  }
+  if (attributes['code-block']) {
+    return '</pre><pre>';
+  }
+
+  return '</p><p>';
+}
+
+/**
+ * Format embedded content
+ */
+function formatEmbed(embed: any): string {
+  if (embed.image) {
+    return `<img src="${embed.image}" alt="" />`;
+  }
+  if (embed.video) {
+    return `<video src="${embed.video}" controls></video>`;
+  }
+  if (embed.formula) {
+    return `<span class="formula">${embed.formula}</span>`;
+  }
+
+  return '';
+} 

@@ -15,7 +15,7 @@ export interface DeltaStatic {
   new(ops?: DeltaOperation[]): Delta;
   Op: {
     Insert: (insert: string | object, attributes?: Record<string, any>) => DeltaOperation;
-    Delete: (delete: number) => DeltaOperation;
+    Delete: (deleteLength: number) => DeltaOperation;
     Retain: (retain: number, attributes?: Record<string, any>) => DeltaOperation;
   };
 }

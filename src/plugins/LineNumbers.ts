@@ -1,6 +1,4 @@
-import Quill from 'quill';
-
-const Delta = Quill.import('delta');
+// import Quill from 'quill';
 
 export interface LineNumbersOptions {
   enabled?: boolean;

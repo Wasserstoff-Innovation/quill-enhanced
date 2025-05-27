@@ -1,5 +1,3 @@
-import { Quill } from 'quill';
-
 export interface Change {
   id: string;
   type: 'insert' | 'delete' | 'format';
@@ -29,4 +27,8 @@ export interface TrackChangesPlugin {
   handleTextChange(delta: any): void;
   updateOptions(options: Partial<TrackChangesOptions>): void;
   getOptions(): TrackChangesOptions;
+}
+
+export interface PluginOptions {
+  enabled?: boolean;
 } 

@@ -10,7 +10,7 @@ export { DiffViewer } from './components/DiffViewer';
 export { MarkdownPreview } from './components/MarkdownPreview';
 
 // Plugins
-export { TrackChangesPlugin } from './plugins/TrackChanges';
+export { TrackChanges as TrackChangesPlugin } from './plugins/TrackChanges';
 export { MarkdownPlugin } from './plugins/MarkdownPlugin';
 export { AutosavePlugin } from './plugins/Autosave';
 export { LineNumbersPlugin } from './plugins/LineNumbers';
@@ -61,7 +61,7 @@ export {
 } from './utils/diffUtils';
 
 // Types
-export type { DeltaOperation } from 'quill';
+export type { DeltaOperation } from './types/delta';
 
 // Constants
 export { EDITOR_MODES } from './constants';

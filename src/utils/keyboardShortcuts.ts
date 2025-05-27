@@ -1,8 +1,5 @@
 import Quill from 'quill';
 
-const Delta = Quill.import('delta');
-type DeltaStatic = typeof Delta;
-
 export interface Shortcut {
   key: string;
   ctrlKey?: boolean;

@@ -10,7 +10,6 @@ type DeltaType = InstanceType<typeof Delta>;
  */
 export const getDiff = (oldDelta: DeltaType, newDelta: DeltaType): DeltaType => {
   // Simple diff: just compare text content
-  const oldText = deltaToText(oldDelta);
   const newText = deltaToText(newDelta);
   // This is a placeholder; you can implement a more sophisticated diff if needed
   // For now, just return a Delta with the new text
@@ -104,7 +103,7 @@ export function computeDiff(oldDelta: DeltaType, newDelta: DeltaType): DiffResul
 }
 
 export function applyDiffHighlighting(delta: DeltaType, diffResult: DiffResult): DeltaType {
-  const result = new Delta(delta);
+  const result = new Delta(delta.ops);
   diffResult.deletions.forEach(deletion => {
     result.retain(deletion.index);
     result.delete(deletion.length);
@@ -127,8 +126,8 @@ export function createSplitDiffs(oldDelta: DeltaType, newDelta: DeltaType): {
   modified: DeltaType;
 } {
   const diffResult = computeDiff(oldDelta, newDelta);
-  const original = new Delta(oldDelta);
-  const modified = new Delta(newDelta);
+  const original = new Delta(oldDelta.ops);
+  const modified = new Delta(newDelta.ops);
   diffResult.deletions.forEach(deletion => {
     original.retain(deletion.index);
     original.delete(deletion.length);

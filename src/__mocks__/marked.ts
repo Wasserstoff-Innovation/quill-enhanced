@@ -1,13 +1,4 @@
-interface MarkedFunction {
-  (text: string): string;
-  parse: (text: string) => string;
-}
+// Mock for marked library
+export const marked = jest.fn().mockReturnValue('<p>mocked html</p>');
 
-const marked = jest.fn((text: string) => text);
-Object.defineProperty(marked, 'parse', {
-  value: jest.fn((text: string) => text),
-  writable: true
-});
-
-export { marked };
 export default marked; 

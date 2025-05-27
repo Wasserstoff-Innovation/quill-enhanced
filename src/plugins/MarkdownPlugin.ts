@@ -1,6 +1,5 @@
 import type { Editor, Plugin } from '../core/types';
 import { toMarkdown, fromMarkdown } from '../utils/markdownUtils';
-import type { Delta } from '../core/types';
 
 export class MarkdownPlugin implements Plugin {
   private editor: Editor;

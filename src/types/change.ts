@@ -1,24 +1,30 @@
-import { Delta, DeltaOperation } from './delta';
-import { User } from './user';
-
 export interface Change {
   id: string;
-  author: User;
+  type: 'insert' | 'delete' | 'format';
+  content: string;
+  author: string;
   timestamp: number;
-  operations: DeltaOperation[];
-  status: 'pending' | 'accepted' | 'rejected';
+  index: number;
+  length: number;
+  attributes?: Record<string, any>;
 }
 
 export const createChange = (
-  author: User,
-  operations: DeltaOperation[],
-  status: Change['status'] = 'pending'
+  type: 'insert' | 'delete' | 'format',
+  content: string,
+  author: string,
+  index: number,
+  length: number,
+  attributes?: Record<string, any>
 ): Change => {
   return {
     id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type,
+    content,
     author,
     timestamp: Date.now(),
-    operations,
-    status
+    index,
+    length,
+    attributes
   };
 }; 

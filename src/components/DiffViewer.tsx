@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { computeDiff, createUnifiedDiff, createSplitDiffs } from '../utils/diffUtils';
 import Quill from 'quill';
-import { computeDiff, applyDiffHighlighting, createUnifiedDiff, createSplitDiffs } from '../utils/diffUtils';
-import type { DiffResult } from '../utils/diffUtils';
 
 const Delta = Quill.import('delta');
-type DeltaStatic = typeof Delta;
+type DeltaStatic = InstanceType<typeof Delta>;
 
 interface DiffViewerProps {
   originalContent: DeltaStatic;
@@ -34,19 +33,23 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
   onAcceptAllChanges,
   onRejectAllChanges
 }) => {
-  const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
   const [unifiedView, setUnifiedView] = useState<DeltaStatic | null>(null);
   const [splitView, setSplitView] = useState<{ original: DeltaStatic; modified: DeltaStatic } | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'split'>(initialViewMode);
 
   useEffect(() => {
     // Compute diff between original and modified content
-    const result = computeDiff(originalContent, modifiedContent);
-    setDiffResult(result);
+    const diffResult = computeDiff(originalContent, modifiedContent);
+    
+    // Log diff result for debugging
+    console.log('Diff computed:', diffResult);
 
     // Create unified and split views
-    setUnifiedView(createUnifiedDiff(originalContent, modifiedContent));
-    setSplitView(createSplitDiffs(originalContent, modifiedContent));
+    const unified = createUnifiedDiff(originalContent, modifiedContent);
+    setUnifiedView(unified);
+
+    const split = createSplitDiffs(originalContent, modifiedContent);
+    setSplitView(split);
   }, [originalContent, modifiedContent]);
 
   const handleAcceptChange = (changeId: string) => {
@@ -197,4 +200,6 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       {viewMode === 'unified' ? renderUnifiedView() : renderSplitView()}
     </div>
   );
-}; 
+};
+
+export default DiffViewer; 

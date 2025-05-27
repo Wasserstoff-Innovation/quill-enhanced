@@ -15,7 +15,8 @@ class Delta {
     return new Delta([...this.ops, ...other.ops]);
   }
 
-  diff(other: Delta) {
+  diff(_other: Delta) {
+    // Simple mock implementation
     return new Delta([]);
   }
 
@@ -73,7 +74,8 @@ class Delta {
     return new Delta(this.ops.slice(start, end));
   }
 
-  transform(other: Delta) {
+  transform(_other: Delta) {
+    // Simple mock implementation  
     return new Delta([]);
   }
 
@@ -147,7 +149,8 @@ class MockQuill {
     this.trigger('selection-change', range, null, 'user');
   }
 
-  getFormat(range?: { index: number; length: number }) {
+  getFormat(_range?: { index: number; length: number }) {
+    // Return mock formats
     return this.formats;
   }
 

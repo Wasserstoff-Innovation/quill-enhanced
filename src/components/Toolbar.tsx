@@ -1,5 +1,4 @@
 import React from 'react';
-import Quill from 'quill';
 
 interface ToolbarProps {
   quill: any;

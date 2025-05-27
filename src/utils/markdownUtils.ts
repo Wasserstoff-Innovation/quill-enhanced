@@ -1,6 +1,6 @@
 import Quill from 'quill';
 const Delta = Quill.import('delta');
-type DeltaType = InstanceType<typeof Delta>;
+type DeltaType = any;
 
 import TurndownService from 'turndown';
 import { marked } from 'marked';
@@ -102,7 +102,6 @@ export function toMarkdown(delta: Delta): string {
 export function fromMarkdown(markdown: string): Delta {
   const ops: DeltaOperation[] = [];
   const lines = markdown.split('\n');
-  let currentListType: string | null = null;
   let listIndent = 0;
 
   lines.forEach((line) => {
@@ -126,6 +125,7 @@ export function fromMarkdown(markdown: string): Delta {
       if (indent > listIndent) {
         listIndent = indent;
       }
+      // Track current list type (implementation can be added later)
       ops.push({
         insert: '- ',
         attributes: { list: 'bullet' }

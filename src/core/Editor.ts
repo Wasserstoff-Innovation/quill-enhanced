@@ -42,7 +42,7 @@ export class Editor implements EditorType {
       this.stateManager.updateSelection(range);
     });
 
-    this.quill.on('editor-change', (eventName: EditorChangeEvent['eventName'], ...args: unknown[]) => {
+    this.quill.on('editor-change', (eventName: EditorChangeEvent['eventName'], ..._args: unknown[]) => {
       if (eventName === 'focus') {
         this.stateManager.setFocused(true);
       } else if (eventName === 'blur') {
