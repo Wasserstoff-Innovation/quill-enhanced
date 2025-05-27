@@ -338,91 +338,6 @@ body {
   margin-right: auto;
 }
 
-.editor-container {
-  background: rgba(17, 17, 17, 0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.5rem;
-  overflow: hidden;
-  margin-bottom: 2rem;
-  min-height: 500px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 0;
-}
-
-.demo-controls {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.content-preview {
-  background: rgba(17, 17, 17, 0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.5rem;
-  padding: 2rem;
-  margin-top: 2rem;
-}
-
-.content-preview h3 {
-  color: #ffffff;
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-}
-
-.content-preview pre {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  overflow-x: auto;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.content-preview code {
-  color: #e4e4e7;
-}
-
-/* Editor placeholder */
-.editor-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  text-align: center;
-  padding: 3rem;
-}
-
-.editor-placeholder h3 {
-  color: #ffffff;
-  margin-bottom: 1.5rem;
-  font-size: 1.75rem;
-}
-
-.editor-placeholder p {
-  color: #9ca3af;
-  margin-bottom: 0.75rem;
-  font-size: 1.125rem;
-}
-
-.editor-placeholder ul {
-  text-align: left;
-  color: #9ca3af;
-  margin-top: 1.5rem;
-}
-
-.editor-placeholder li {
-  margin-bottom: 0.75rem;
-  font-size: 1rem;
-}
-
 /* Documentation */
 .docs-section {
   max-width: 900px;
@@ -585,61 +500,6 @@ body {
     padding: 2rem 0;
   }
 }
-
-/* Quill editor dark theme overrides */
-.ql-toolbar {
-  background: rgba(31, 41, 55, 0.8) !important;
-  backdrop-filter: blur(10px) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  border-radius: 0.75rem 0.75rem 0 0 !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* Prevent toolbar duplication */
-.ql-toolbar + .ql-toolbar {
-  display: none !important;
-}
-
-.ql-toolbar .ql-stroke {
-  stroke: #d1d5db !important;
-}
-
-.ql-toolbar .ql-fill {
-  fill: #d1d5db !important;
-}
-
-.ql-toolbar button:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-radius: 0.25rem !important;
-}
-
-.ql-toolbar button.ql-active {
-  background: rgba(59, 130, 246, 0.3) !important;
-  border-radius: 0.25rem !important;
-}
-
-.ql-container {
-  background: rgba(31, 41, 55, 0.6) !important;
-  backdrop-filter: blur(10px) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #e4e4e7 !important;
-  border-radius: 0 0 0.75rem 0.75rem !important;
-  min-height: 400px !important;
-}
-
-.ql-editor {
-  color: #e4e4e7 !important;
-  font-size: 16px !important;
-  line-height: 1.6 !important;
-  padding: 2rem !important;
-}
-
-.ql-editor.ql-blank::before {
-  color: #9ca3af !important;
-  font-style: normal !important;
-}
-
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -657,29 +517,6 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 0.8);
-}
-
-/* Enhanced Editor Styles */
-.enhanced-editor {
-  background: rgba(17, 17, 17, 0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.5rem;
-  overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 0;
-}
-
-.editor-controls {
-  background: rgba(31, 41, 55, 0.8);
-  padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .control-group {
@@ -726,45 +563,6 @@ body {
   border-color: rgba(59, 130, 246, 0.5);
   color: #ffffff;
   transform: translateY(-1px);
-}
-
-.editor-wrapper {
-  position: relative;
-  background: rgba(31, 41, 55, 0.6);
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.editor-wrapper.with-line-numbers::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 50px;
-  background: rgba(31, 41, 55, 0.5);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 1;
-}
-
-.editor-wrapper.with-track-changes .ql-editor {
-  border-left: 3px solid #10b981;
-}
-
-.quill-editor {
-  position: relative;
-  z-index: 0;
-}
-
-.editor-status {
-  background: rgba(31, 41, 55, 0.8);
-  padding: 0.75rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  color: #9ca3af;
 }
 
 .status-left,
@@ -842,27 +640,4 @@ body {
 
 .btn-copied::after {
   content: ' ✓ Copied!';
-}
-
-/* Responsive controls */
-@media (max-width: 768px) {
-  .editor-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .control-group {
-    justify-content: center;
-  }
-  
-  .editor-status {
-    flex-direction: column;
-    gap: 0.5rem;
-    text-align: center;
-  }
-  
-  .status-left,
-  .status-right {
-    justify-content: center;
-  }
 }

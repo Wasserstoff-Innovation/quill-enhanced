@@ -1,10 +1,11 @@
 export interface Change {
   id: string;
-  type: 'insert' | 'delete' | 'format';
+  type: 'insert' | 'delete' | 'format' | 'modify';
   author: string;
   timestamp: number;
   text?: string;
   length?: number;
+  index?: number;
   attributes?: Record<string, any>;
   accepted?: boolean;
   rejected?: boolean;
@@ -24,7 +25,7 @@ export interface TrackChangesPlugin {
   acceptChange(id: string): boolean;
   rejectChange(id: string): boolean;
   clearChanges(): void;
-  handleTextChange(delta: any): void;
+  handleTextChange(delta: any, oldDelta?: any, source?: string): void;
   updateOptions(options: Partial<TrackChangesOptions>): void;
   getOptions(): TrackChangesOptions;
 }

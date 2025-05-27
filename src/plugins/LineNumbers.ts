@@ -1,4 +1,4 @@
-// import Quill from 'quill';
+import Quill from 'quill';
 
 export interface LineNumbersOptions {
   enabled?: boolean;
@@ -14,12 +14,13 @@ export interface LineNumbersOptions {
 }
 
 export class LineNumbersPlugin {
-  private quill: any;
+  private quill: Quill;
   private options: LineNumbersOptions;
   private container: HTMLElement;
   private numbers: HTMLElement[] = [];
+  private isInitialized: boolean = false;
 
-  constructor(quill: any, options: LineNumbersOptions = {}) {
+  constructor(quill: Quill, options: LineNumbersOptions = {}) {
     this.quill = quill;
     this.options = {
       enabled: true,
@@ -37,75 +38,98 @@ export class LineNumbersPlugin {
 
     this.container = document.createElement('div');
     this.container.className = 'ql-line-numbers';
-    this.container.style.cssText = `
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 50px;
-      border-right: 1px solid #ccc;
-      background: #f8f8f8;
-      overflow: hidden;
-      pointer-events: none;
-    `;
-
+    
     if (this.options.enabled) {
       this.initialize();
     }
   }
 
   private initialize(): void {
-    const editor = this.quill.root.parentElement;
-    editor.style.position = 'relative';
-    editor.style.paddingLeft = '50px';
-    editor.appendChild(this.container);
+    if (this.isInitialized) return;
+    
+    const editor = this.quill.container;
+    if (!editor) return;
 
+    // Remove any existing line number containers
+    const existing = editor.querySelector('.ql-line-numbers');
+    if (existing) existing.remove();
+
+    // Style the container
+    this.container.style.cssText = `
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      border-right: 1px solid #e0e0e0;
+      background: #f8f8f8;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    `;
+
+    // Make editor container relative and add padding
+    editor.style.position = 'relative';
+    editor.style.paddingLeft = '40px';
+    
+    // Insert the line numbers container
+    editor.insertBefore(this.container, this.quill.root);
+
+    // Set up event listeners
     this.quill.on('text-change', () => this.update());
     this.quill.on('scroll', () => this.syncScroll());
+    
+    this.isInitialized = true;
     this.update();
   }
 
   private update(): void {
+    if (!this.isInitialized) return;
+    
     const text = this.quill.getText();
     const lines = text.split('\n');
-    const lineCount = lines.length;
+    const lineCount = Math.max(lines.length - 1, 1); // Subtract 1 because Quill adds extra newline
 
-    // Remove excess line numbers
-    while (this.numbers.length > lineCount) {
-      const number = this.numbers.pop();
-      if (number) {
-        this.container.removeChild(number);
+    // Clear existing numbers
+    this.container.innerHTML = '';
+    this.numbers = [];
+
+    // Add line numbers only for non-list lines
+    const quillLines = this.quill.getLines();
+    for (let i = 0, visualLine = 0; i < lineCount; i++) {
+      const lineBlot = quillLines[i];
+      let isList = false;
+      if (lineBlot && lineBlot.formats) {
+        const formats = lineBlot.formats();
+        isList = !!formats.list;
+      }
+      if (!isList) {
+        const number = document.createElement('div');
+        number.className = 'ql-line-number-plugin';
+        number.style.cssText = `
+          height: 1.42em;
+          line-height: 1.42em;
+          padding-right: ${this.options.style?.paddingRight || '10px'};
+          text-align: ${this.options.style?.textAlign || 'right'};
+          color: ${this.options.style?.color || '#999'};
+          font-size: ${this.options.style?.fontSize || '14px'};
+          font-family: ${this.options.style?.fontFamily || 'monospace'};
+          user-select: ${this.options.style?.userSelect || 'none'};
+          box-sizing: border-box;
+        `;
+        number.textContent = String(this.options.startLine! + visualLine);
+        this.container.appendChild(number);
+        this.numbers.push(number);
+        visualLine++;
       }
     }
-
-    // Add new line numbers
-    while (this.numbers.length < lineCount) {
-      const number = document.createElement('div');
-      number.style.cssText = `
-        height: ${this.quill.root.style.lineHeight || '1.5em'};
-        line-height: ${this.quill.root.style.lineHeight || '1.5em'};
-        padding-right: ${this.options.style?.paddingRight || '10px'};
-        text-align: ${this.options.style?.textAlign || 'right'};
-        color: ${this.options.style?.color || '#999'};
-        font-size: ${this.options.style?.fontSize || '14px'};
-        font-family: ${this.options.style?.fontFamily || 'monospace'};
-        user-select: ${this.options.style?.userSelect || 'none'};
-      `;
-      this.container.appendChild(number);
-      this.numbers.push(number);
-    }
-
-    // Update line numbers
-    this.numbers.forEach((number, index) => {
-      number.textContent = String(this.options.startLine! + index);
-    });
   }
 
   private syncScroll(): void {
+    if (!this.isInitialized) return;
+    
     const editor = this.quill.root;
-    this.numbers.forEach(number => {
-      number.style.transform = `translateY(-${editor.scrollTop}px)`;
-    });
+    this.container.scrollTop = editor.scrollTop;
   }
 
   public getLineNumbers(): HTMLElement[] {
@@ -130,10 +154,24 @@ export class LineNumbersPlugin {
   }
 
   public disable(): void {
-    if (this.options.enabled) {
+    if (this.options.enabled && this.isInitialized) {
       this.options.enabled = false;
-      this.container.remove();
+      
+      // Remove padding and container
+      const editor = this.quill.container;
+      if (editor) {
+        editor.style.paddingLeft = '';
+        if (this.container.parentNode) {
+          this.container.parentNode.removeChild(this.container);
+        }
+      }
+      
+      // Remove event listeners
+      this.quill.off('text-change');
+      this.quill.off('scroll');
+      
       this.numbers = [];
+      this.isInitialized = false;
     }
   }
 

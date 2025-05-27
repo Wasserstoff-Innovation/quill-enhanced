@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@wasserstoff/quill-enhanced": "^1.0.3",
+    "quill": "^2.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "quill": "^2.0.3"
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
@@ -23,4 +25,4 @@
     "typescript": "^5.2.2",
     "vite": "^6.3.5"
   }
-} 
+}

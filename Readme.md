@@ -12,7 +12,7 @@ This project is built on top of the excellent [Quill Rich Text Editor](https://g
 
 - **Original Quill Editor**: [https://github.com/slab/quill](https://github.com/slab/quill)
 - **Quill Documentation**: [https://quilljs.com/](https://quilljs.com/)
-- **License**: Quill is licensed under BSD 3-Clause License
+- **License**: Quill is licensed under the [BSD-3-Clause License](https://github.com/slab/quill/blob/develop/LICENSE).
 
 ## ✨ Features
 
@@ -388,7 +388,7 @@ Visit `http://localhost:5173` to explore the interactive demo.
 
 ## 📄 License
 
-MIT © [Wasserstoff](https://github.com/wasserstoff-innovation)
+This project is licensed under the BSD-3-Clause License. See the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 

@@ -11,7 +11,11 @@ describe('Toolbar', () => {
       getSelection: jest.fn(),
       getFormat: jest.fn(),
       format: jest.fn(),
-      insertEmbed: jest.fn()
+      insertEmbed: jest.fn(),
+      history: {
+        undo: jest.fn(),
+        redo: jest.fn()
+      }
     };
   });
 
@@ -120,12 +124,30 @@ describe('Toolbar', () => {
     });
   });
 
+  describe('Undo/Redo', () => {
+    it('should call undo', () => {
+      render(<Toolbar quill={mockQuill} />);
+      fireEvent.click(screen.getByTitle('Undo (Ctrl+Z)'));
+
+      expect(mockQuill.history.undo).toHaveBeenCalled();
+    });
+
+    it('should call redo', () => {
+      render(<Toolbar quill={mockQuill} />);
+      fireEvent.click(screen.getByTitle('Redo (Ctrl+Y)'));
+
+      expect(mockQuill.history.redo).toHaveBeenCalled();
+    });
+  });
+
   describe('Text Color', () => {
     it('should apply text color', () => {
       mockQuill.getSelection.mockReturnValue({ index: 0, length: 5 });
 
       render(<Toolbar quill={mockQuill} />);
-      const colorInput = screen.getByTitle('Text Color');
+      const colorInputs = screen.getAllByTitle('Text Color');
+      const colorInput = colorInputs.find(input => input.tagName === 'INPUT') as HTMLInputElement;
+      
       fireEvent.change(colorInput, { target: { value: '#ff0000' } });
 
       expect(mockQuill.format).toHaveBeenCalledWith('color', '#ff0000');
@@ -135,7 +157,9 @@ describe('Toolbar', () => {
       mockQuill.getSelection.mockReturnValue({ index: 0, length: 5 });
 
       render(<Toolbar quill={mockQuill} />);
-      const colorInput = screen.getByTitle('Background Color');
+      const colorInputs = screen.getAllByTitle('Background Color');
+      const colorInput = colorInputs.find(input => input.tagName === 'INPUT') as HTMLInputElement;
+      
       fireEvent.change(colorInput, { target: { value: '#ffff00' } });
 
       expect(mockQuill.format).toHaveBeenCalledWith('background', '#ffff00');
@@ -143,9 +167,13 @@ describe('Toolbar', () => {
   });
 
   describe('Link', () => {
+    beforeEach(() => {
+      global.prompt = jest.fn();
+    });
+
     it('should insert link when URL is provided', () => {
       mockQuill.getSelection.mockReturnValue({ index: 0, length: 5 });
-      window.prompt = jest.fn().mockReturnValue('https://example.com');
+      (global.prompt as jest.Mock).mockReturnValue('https://example.com');
 
       render(<Toolbar quill={mockQuill} />);
       fireEvent.click(screen.getByTitle('Insert Link'));
@@ -155,7 +183,7 @@ describe('Toolbar', () => {
 
     it('should not insert link when URL is not provided', () => {
       mockQuill.getSelection.mockReturnValue({ index: 0, length: 5 });
-      window.prompt = jest.fn().mockReturnValue(null);
+      (global.prompt as jest.Mock).mockReturnValue(null);
 
       render(<Toolbar quill={mockQuill} />);
       fireEvent.click(screen.getByTitle('Insert Link'));
@@ -165,9 +193,13 @@ describe('Toolbar', () => {
   });
 
   describe('Image', () => {
+    beforeEach(() => {
+      global.prompt = jest.fn();
+    });
+
     it('should insert image when URL is provided', () => {
       mockQuill.getSelection.mockReturnValue({ index: 0, length: 5 });
-      window.prompt = jest.fn().mockReturnValue('https://example.com/image.jpg');
+      (global.prompt as jest.Mock).mockReturnValue('https://example.com/image.jpg');
 
       render(<Toolbar quill={mockQuill} />);
       fireEvent.click(screen.getByTitle('Insert Image'));
@@ -177,7 +209,7 @@ describe('Toolbar', () => {
 
     it('should not insert image when URL is not provided', () => {
       mockQuill.getSelection.mockReturnValue({ index: 0, length: 5 });
-      window.prompt = jest.fn().mockReturnValue(null);
+      (global.prompt as jest.Mock).mockReturnValue(null);
 
       render(<Toolbar quill={mockQuill} />);
       fireEvent.click(screen.getByTitle('Insert Image'));
@@ -205,6 +237,13 @@ describe('Toolbar', () => {
       fireEvent.click(screen.getByTitle('Code Block'));
 
       expect(mockQuill.format).toHaveBeenCalledWith('code-block', false);
+    });
+  });
+
+  describe('Without Quill Instance', () => {
+    it('should render loading state when quill is null', () => {
+      render(<Toolbar quill={null} />);
+      expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
   });
 }); 

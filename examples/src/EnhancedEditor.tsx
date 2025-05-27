@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Quill from 'quill';
+import { Editor } from '@wasserstoff/quill-enhanced';
+import './EnhancedEditor.css';
 
 interface EnhancedEditorProps {
   initialContent?: string;
@@ -26,6 +28,9 @@ const EnhancedEditor: React.FC<EnhancedEditorProps> = ({
   const [markdownMode, setMarkdownMode] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const [content, setContent] = useState<string>(initialContent);
+  const [enableTableOfContents, setEnableTableOfContents] = useState<boolean>(false);
+  const [enableExport, setEnableExport] = useState<boolean>(false);
 
   // Keep onChange ref updated without causing re-renders
   useEffect(() => {
@@ -151,91 +156,86 @@ const EnhancedEditor: React.FC<EnhancedEditorProps> = ({
     }
   }, [initialContent, placeholder, readOnly]);
 
+  const handleChange = (delta: any) => {
+    setContent(delta);
+  };
+
+  const toggleLineNumbers = () => {
+    setShowLineNumbers(!showLineNumbers);
+  };
+
+  const toggleMarkdown = () => {
+    setMarkdownMode(!markdownMode);
+  };
+
+  const toggleTrackChanges = () => {
+    setTrackChanges(!trackChanges);
+  };
+
+  const toggleAutosave = () => {
+    setAutosave(!autosave);
+  };
+
+  const toggleTableOfContents = () => {
+    setEnableTableOfContents(!enableTableOfContents);
+  };
+
+  const toggleExport = () => {
+    setEnableExport(!enableExport);
+  };
+
   return (
     <div className="enhanced-editor">
-      {/* Feature Controls */}
-      <div className="editor-controls">
-        <div className="control-group">
-          <label className="control-label">
-            <input
-              type="checkbox"
-              checked={trackChanges}
-              onChange={(e) => setTrackChanges(e.target.checked)}
-            />
-            Track Changes
-          </label>
-          <label className="control-label">
-            <input
-              type="checkbox"
-              checked={showLineNumbers}
-              onChange={(e) => setShowLineNumbers(e.target.checked)}
-            />
-            Line Numbers
-          </label>
-          <label className="control-label">
-            <input
-              type="checkbox"
-              checked={autosave}
-              onChange={(e) => setAutosave(e.target.checked)}
-            />
-            Autosave
-          </label>
-          <label className="control-label">
-            <input
-              type="checkbox"
-              checked={readOnly}
-              onChange={(e) => setReadOnly(e.target.checked)}
-            />
-            Read Only
-          </label>
-          <label className="control-label">
-            <input
-              type="checkbox"
-              checked={markdownMode}
-              onChange={(e) => setMarkdownMode(e.target.checked)}
-            />
-            Markdown Mode
-          </label>
-        </div>
-        
-        <div className="control-group">
-          <button className="control-btn" onClick={insertSampleContent}>
-            📝 Insert Sample
-          </button>
-          <button className="control-btn" onClick={() => exportContent('html')}>
-            📄 Export HTML
-          </button>
-          <button className="control-btn" onClick={() => exportContent('pdf')}>
-            📑 Export PDF
-          </button>
-          <button className="control-btn" onClick={() => exportContent('docx')}>
-            📘 Export DOCX
-          </button>
-        </div>
-      </div>
-
-      {/* Editor Container */}
-      <div 
-        className={`editor-wrapper ${showLineNumbers ? 'with-line-numbers' : ''} ${trackChanges ? 'with-track-changes' : ''}`}
-      >
-        <div 
-          ref={editorRef} 
-          className="quill-editor"
-          style={{ minHeight: '400px' }}
+      <div className="editor-container">
+        <Editor
+          initialContent={content}
+          documentId="enhanced-doc"
+          showLineNumbers={showLineNumbers}
+          enableMarkdown={markdownMode}
+          trackChanges={trackChanges}
+          autosave={autosave}
+          onChange={handleChange}
         />
       </div>
+      <div className="code-container">
+        <h2>Enhanced Editor Code Example</h2>
+        <pre>
+          {`import React, { useState } from 'react';
+import { Editor } from '@wasserstoff/quill-enhanced';
 
-      {/* Status Bar */}
-      <div className="editor-status">
-        <div className="status-left">
-          <span className="status-item">Words: {wordCount}</span>
-          <span className="status-item">Characters: {charCount}</span>
-          {autosave && <span className="status-item autosave-indicator">🟢 Autosave On</span>}
-          {trackChanges && <span className="status-item">📝 Tracking Changes</span>}
-          {readOnly && <span className="status-item">🔒 Read Only</span>}
-        </div>
-        <div className="status-right">
-          <span className="status-item">Wasserstoff Quill Enhanced v0.1.0</span>
+const EnhancedEditor = () => {
+  const [content, setContent] = useState('Hello, World!');
+  const [showLineNumbers, setShowLineNumbers] = useState(${showLineNumbers});
+  const [enableMarkdown, setEnableMarkdown] = useState(${markdownMode});
+  const [trackChanges, setTrackChanges] = useState(${trackChanges});
+  const [autosave, setAutosave] = useState(${autosave});
+  const [enableTableOfContents, setEnableTableOfContents] = useState(${enableTableOfContents});
+  const [enableExport, setEnableExport] = useState(${enableExport});
+
+  const handleChange = (delta) => {
+    setContent(delta);
+  };
+
+  return (
+    <Editor
+      initialContent={content}
+      documentId="enhanced-doc"
+      showLineNumbers={showLineNumbers}
+      enableMarkdown={enableMarkdown}
+      trackChanges={trackChanges}
+      autosave={autosave}
+      onChange={handleChange}
+    />
+  );
+};`}
+        </pre>
+        <div className="controls">
+          <button onClick={toggleLineNumbers}>Toggle Line Numbers</button>
+          <button onClick={toggleMarkdown}>Toggle Markdown</button>
+          <button onClick={toggleTrackChanges}>Toggle Track Changes</button>
+          <button onClick={toggleAutosave}>Toggle Autosave</button>
+          <button onClick={toggleTableOfContents}>Toggle Table of Contents</button>
+          <button onClick={toggleExport}>Toggle Export</button>
         </div>
       </div>
     </div>

@@ -1,63 +1,64 @@
-import React, { useState, useCallback } from 'react';
-// import SimpleEditor from './SimpleEditor';
-import EnhancedEditor from './EnhancedEditor';
-import Notification from './Notification';
+import React, { useState } from 'react';
+import { Editor } from '../../src';
+// import '../../src/components/Editor.css';
 import './App.css';
 
+// Custom Notification Component
+const Notification: React.FC<{ message: string; type: string; onClose: () => void }> = ({ message, type, onClose }) => {
+  return (
+    <div className={`notification ${type}`}>
+      <p>{message}</p>
+      <button onClick={onClose}>Close</button>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'basic' | 'advanced' | 'docs'>('overview');
-  const [editorContent, setEditorContent] = useState('');
-  const [notification, setNotification] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
-  const [copyButtonState, setCopyButtonState] = useState<'normal' | 'copied'>('normal');
+  const [content, setContent] = useState<string>('');
+  const [showLineNumbers, setShowLineNumbers] = useState<boolean>(true);
+  const [trackChanges, setTrackChanges] = useState<boolean>(true);
+  const [autosave, setAutosave] = useState<boolean>(true);
+  const [enableMarkdown, setEnableMarkdown] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [editorContent, setEditorContent] = useState<string>('');
+  const [copyButtonState, setCopyButtonState] = useState<string>('Copy');
+  const [notification, setNotification] = useState<{ message: string; type: string } | null>(null);
 
-  const handleEditorChange = useCallback((content: string) => {
+  const handleChange = (delta: any) => {
+    setContent(delta);
+  };
+
+  const toggleLineNumbers = () => {
+    setShowLineNumbers(!showLineNumbers);
+  };
+
+  const toggleMarkdown = () => {
+    setEnableMarkdown(!enableMarkdown);
+  };
+
+  const toggleTrackChanges = () => {
+    setTrackChanges(!trackChanges);
+  };
+
+  const toggleAutosave = () => {
+    setAutosave(!autosave);
+  };
+
+  const handleEditorChange = (content: string) => {
     setEditorContent(content);
-  }, []);
-
-  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    setNotification({ message, type });
-  }, []);
+  };
 
   const exportToHTML = () => {
-    const blob = new Blob([editorContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'document.html';
-    a.click();
-    URL.revokeObjectURL(url);
-    showNotification('HTML file downloaded successfully!');
+    // Logic to export content to HTML
+    console.log('Exporting to HTML:', editorContent);
   };
 
   const copyContent = () => {
-    navigator.clipboard.writeText(editorContent);
-    setCopyButtonState('copied');
-    showNotification('Content copied to clipboard!');
-    setTimeout(() => setCopyButtonState('normal'), 2000);
+    navigator.clipboard.writeText(editorContent).then(() => {
+      setCopyButtonState('Copied!');
+      setTimeout(() => setCopyButtonState('Copy'), 2000);
+    });
   };
-
-  const handleExport = useCallback((format: string, content: string) => {
-    switch (format) {
-      case 'html':
-        const htmlBlob = new Blob([content], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const htmlLink = document.createElement('a');
-        htmlLink.href = htmlUrl;
-        htmlLink.download = 'document.html';
-        htmlLink.click();
-        URL.revokeObjectURL(htmlUrl);
-        showNotification('HTML exported successfully!');
-        break;
-      case 'pdf':
-        showNotification('PDF export feature coming soon!', 'info');
-        break;
-      case 'docx':
-        showNotification('DOCX export feature coming soon!', 'info');
-        break;
-      default:
-        showNotification('Export format not supported', 'error');
-    }
-  }, [showNotification]);
 
   return (
     <div className="app">
@@ -68,7 +69,6 @@ const App: React.FC = () => {
             <div className="logo">
               <img src="/src/logo.png" alt="Wasserstoff" className="logo-image" />
               <div>
-                <h1>Wasserstoff</h1>
                 <span className="logo-subtitle">Quill Enhanced SDK</span>
               </div>
             </div>
@@ -80,16 +80,10 @@ const App: React.FC = () => {
                 Overview
               </button>
               <button 
-                className={`nav-btn ${activeTab === 'basic' ? 'active' : ''}`}
-                onClick={() => setActiveTab('basic')}
+                className={`nav-btn ${activeTab === 'playground' ? 'active' : ''}`}
+                onClick={() => setActiveTab('playground')}
               >
-                Live Demo
-              </button>
-              <button 
-                className={`nav-btn ${activeTab === 'advanced' ? 'active' : ''}`}
-                onClick={() => setActiveTab('advanced')}
-              >
-                Advanced Demo
+                Playground
               </button>
               <button 
                 className={`nav-btn ${activeTab === 'docs' ? 'active' : ''}`}
@@ -111,8 +105,8 @@ const App: React.FC = () => {
                 <h2>Professional WYSIWYG Editor SDK</h2>
                 <p>Built on top of Quill with advanced features for modern applications. Create rich, collaborative editing experiences with track changes, autosave, and powerful export capabilities.</p>
                 <div className="hero-buttons">
-                  <button className="btn btn-primary" onClick={() => setActiveTab('basic')}>
-                    Try Live Demo
+                  <button className="btn btn-primary" onClick={() => setActiveTab('playground')}>
+                    Try Playground
                   </button>
                   <button className="btn btn-secondary" onClick={() => setActiveTab('docs')}>
                     View Documentation
@@ -155,64 +149,52 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'basic' && (
+          {activeTab === 'playground' && (
             <div className="demo-section">
-              <h2>Live Editor Demo</h2>
-              <p>Experience the power of our WYSIWYG editor with essential formatting tools and intuitive interface.</p>
-              
-              <div className="editor-container">
-                <EnhancedEditor
-                  initialContent="<h1>Welcome to Wasserstoff Quill Enhanced!</h1><p>This is a <strong>live demo</strong> of our WYSIWYG editor. Try the following features:</p><ul><li>Format text with <em>bold</em>, <u>underline</u>, and other styles</li><li>Create headers and lists</li><li>Add links and blockquotes</li><li>Change colors and alignment</li></ul><p>Start editing to see the magic happen! ✨</p>"
-                  placeholder="Start typing to experience the editor..."
-                  onChange={handleEditorChange}
-                />
-              </div>
-
-              <div className="demo-controls">
-                <button className="btn btn-primary" onClick={exportToHTML}>
-                  📄 Export HTML
-                </button>
-                <button 
-                  className={`btn btn-secondary ${copyButtonState === 'copied' ? 'btn-copied' : ''}`} 
-                  onClick={copyContent}
-                >
-                  📋 Copy Content
-                </button>
-              </div>
-
-              {editorContent && (
-                <div className="content-preview">
-                  <h3>Live Content Preview:</h3>
-                  <pre><code>{editorContent}</code></pre>
+              <h2>Playground</h2>
+              <p>Try all advanced features and see the code to use the SDK in your app.</p>
+              <div className="playground-main">
+                <div className="playground-editor">
+                  <Editor
+                    initialContent="<h1>Welcome to Wasserstoff Quill Enhanced!</h1><p>This is a <strong>playground</strong> for our WYSIWYG editor. Try the following features:</p><ul><li>Format text with <em>bold</em>, <u>underline</u>, and other styles</li><li>Create headers and lists</li><li>Add links and blockquotes</li><li>Change colors and alignment</li></ul><p>Start editing to see the magic happen! ✨</p>"
+                    placeholder="Experience all the advanced features..."
+                    showLineNumbers={showLineNumbers}
+                    trackChanges={trackChanges}
+                    autosave={autosave}
+                    enableMarkdown={enableMarkdown}
+                    onChange={setContent}
+                  />
                 </div>
-              )}
-            </div>
-          )}
+                <div className="playground-code">
+                  <h3>How to use in your app</h3>
+                  <pre>{`
+import { Editor } from '@wasserstoff/quill-enhanced';
+import '@wasserstoff/quill-enhanced/dist/index.css';
 
-          {activeTab === 'advanced' && (
-            <div className="demo-section">
-              <h2>Advanced Editor Demo</h2>
-              <p>Explore the full potential with track changes, autosave, line numbers, and collaborative features.</p>
-              
-              <EnhancedEditor
-                placeholder="Experience all the advanced features..."
-                onChange={handleEditorChange}
-                onExport={handleExport}
-              />
-
-              {editorContent && (
-                <div className="content-preview">
-                  <h3>Live Content Preview:</h3>
-                  <pre><code>{editorContent}</code></pre>
+<Editor
+  initialContent={...}
+  placeholder="..."
+  showLineNumbers={${showLineNumbers}}
+  trackChanges={${trackChanges}}
+  autosave={${autosave}}
+  enableMarkdown={${enableMarkdown}}
+  onChange={...}
+/>
+                  `}</pre>
+                  <div className="playground-toggles">
+                    <label><input type="checkbox" checked={showLineNumbers} onChange={() => setShowLineNumbers(v => !v)} /> Show Line Numbers</label>
+                    <label><input type="checkbox" checked={trackChanges} onChange={() => setTrackChanges(v => !v)} /> Track Changes</label>
+                    <label><input type="checkbox" checked={autosave} onChange={() => setAutosave(v => !v)} /> Autosave</label>
+                    <label><input type="checkbox" checked={enableMarkdown} onChange={() => setEnableMarkdown(v => !v)} /> Markdown</label>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
           {activeTab === 'docs' && (
             <div className="docs-section">
               <h2>Documentation</h2>
-              
               <div className="docs-content">
                 <section className="doc-section">
                   <h3>🚀 Quick Start</h3>
@@ -221,79 +203,25 @@ const App: React.FC = () => {
 # Peer dependencies
 npm install react react-dom quill</code></pre>
                 </section>
-
                 <section className="doc-section">
                   <h3>📝 Basic Usage</h3>
-                  <pre><code>{`import React from 'react';
-import { EnhancedEditor } from '@wasserstoff/quill-enhanced';
+                  <pre><code>{`import { Editor } from '@wasserstoff/quill-enhanced';
+import '@wasserstoff/quill-enhanced/dist/index.css';
 
 function MyApp() {
   return (
-    <EnhancedEditor
-      initialContent="Hello World!"
-      placeholder="Start typing..."
-      onChange={(content) => console.log(content)}
+    <Editor
+      initialContent={content}
+      documentId="demo-doc"
+      showLineNumbers={showLineNumbers}
+      enableMarkdown={enableMarkdown}
+      trackChanges={trackChanges}
+      autosave={autosave}
+      onChange={handleChange}
     />
   );
-}`}</code></pre>
-                </section>
-
-                <section className="doc-section">
-                  <h3>🔥 Advanced Features</h3>
-                  <pre><code>{`import React from 'react';
-import { EnhancedEditor } from '@wasserstoff/quill-enhanced';
-
-function AdvancedApp() {
-  return (
-    <EnhancedEditor
-      initialContent="Hello World!"
-      placeholder="Start typing..."
-      onChange={(content) => console.log(content)}
-      onExport={(format, content) => {
-        // Handle export
-        console.log(\`Exporting as \${format}\`);
-      }}
-    />
-  );
-}`}</code></pre>
-                </section>
-
-                <section className="doc-section">
-                  <h3>🔧 API Reference</h3>
-                  <div className="api-table">
-                    <h4>EnhancedEditor Props</h4>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Prop</th>
-                          <th>Type</th>
-                          <th>Description</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>initialContent</td>
-                          <td>string</td>
-                          <td>Initial HTML content for the editor</td>
-                        </tr>
-                        <tr>
-                          <td>placeholder</td>
-                          <td>string</td>
-                          <td>Placeholder text when editor is empty</td>
-                        </tr>
-                        <tr>
-                          <td>onChange</td>
-                          <td>(content: string) =&gt; void</td>
-                          <td>Callback when content changes</td>
-                        </tr>
-                        <tr>
-                          <td>onExport</td>
-                          <td>(format: string, content: string) =&gt; void</td>
-                          <td>Callback when content is exported</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+};`}
+                  </code></pre>
                 </section>
               </div>
             </div>

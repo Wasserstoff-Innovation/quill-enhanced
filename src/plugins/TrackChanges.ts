@@ -1,11 +1,70 @@
-import { Quill } from 'quill';
+import Quill from 'quill';
 import { Change, TrackChangesOptions, TrackChangesPlugin } from './types';
+import debounce from 'lodash/debounce';
+import { computeDiff, applyDiffHighlighting } from '../utils/diffUtils';
+
+const Delta = Quill.import('delta');
+const Inline: any = Quill.import('blots/inline');
+const Parchment = Quill.import('parchment');
+
+// InsertBlot for tracked insertions
+class InsertBlot extends Inline {
+  static blotName = 'insert';
+  static tagName = 'span';
+  static className = 'insert';
+  static scope = Parchment.Scope.INLINE;
+
+  static create(value: any) {
+    const node = super.create();
+    node.setAttribute('data-track', 'insert');
+    node.classList.add('insert');
+    return node;
+  }
+}
+
+// DeleteBlot for tracked deletions
+class DeleteBlot extends Inline {
+  static blotName = 'delete';
+  static tagName = 'span';
+  static className = 'delete';
+  static scope = Parchment.Scope.INLINE;
+
+  static create(value: any) {
+    const node = super.create();
+    node.setAttribute('data-track', 'delete');
+    node.classList.add('delete');
+    return node;
+  }
+}
+
+Quill.register('formats/insert', InsertBlot);
+Quill.register('formats/delete', DeleteBlot);
+
+// Utility: Remove highlight attributes from a Delta
+function stripHighlights(delta: any): any {
+  const cleanOps = delta.ops.map((op: any) => {
+    if (op.attributes) {
+      const attrs = { ...op.attributes };
+      delete attrs.strike;
+      delete attrs.color;
+      delete attrs.background;
+      return { ...op, attributes: Object.keys(attrs).length ? attrs : undefined };
+    }
+    return op;
+  });
+  return new Delta(cleanOps);
+}
 
 export class TrackChanges implements TrackChangesPlugin {
   private quill: Quill;
   private changes: Change[] = [];
   private options: TrackChangesOptions;
   private enabled: boolean;
+  private lastDelta: any;
+  private undoStack: Change[][] = [];
+  private redoStack: Change[][] = [];
+  private isProcessingUndoRedo: boolean = false;
+  private isProcessingChange: boolean = false;
 
   constructor(quill: Quill, options: TrackChangesOptions) {
     this.quill = quill;
@@ -14,12 +73,102 @@ export class TrackChanges implements TrackChangesPlugin {
       ...options
     };
     this.enabled = this.options.enabled ?? true;
+    this.lastDelta = quill.getContents();
     this.initialize();
   }
 
   private initialize(): void {
     if (this.enabled) {
-      this.quill.on('text-change', this.handleTextChange.bind(this));
+      this.addTrackChangesStyles();
+      const debouncedTextChange = debounce(this.handleTextChange.bind(this), 100);
+      this.quill.on('text-change', debouncedTextChange);
+      console.log('[TrackChanges] Initialized and event handler attached.');
+    }
+  }
+
+  private addTrackChangesStyles(): void {
+    const style = document.createElement('style');
+    style.textContent = `
+      .ql-editor .insert {
+        background-color: rgba(200, 230, 201, 0.3);
+        border-bottom: 2px solid #4CAF50;
+      }
+      .ql-editor .delete, .ql-editor [style*="line-through"] {
+        background-color: rgba(255, 205, 210, 0.3);
+        text-decoration: line-through;
+        color: #C62828;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  public handleTextChange(): void {
+    if (!this.enabled || this.isProcessingChange || this.isProcessingUndoRedo) return;
+    this.isProcessingChange = true;
+    try {
+      const oldDelta = this.lastDelta;
+      const newDelta = this.quill.getContents();
+      if (JSON.stringify(oldDelta) === JSON.stringify(newDelta)) {
+        this.isProcessingChange = false;
+        return;
+      }
+      // Use Quill's Delta.diff for accurate diffing
+      const diffDelta = oldDelta.diff(newDelta);
+      let indexOld = 0;
+      let indexNew = 0;
+      let highlighted = new Delta();
+      diffDelta.ops.forEach((op: any) => {
+        if (op.retain) {
+          highlighted.retain(op.retain);
+          indexOld += op.retain;
+          indexNew += op.retain;
+        } else if (op.insert) {
+          highlighted.retain(typeof op.insert === 'string' ? op.insert.length : 1, { background: '#cce8cc', color: '#003700' });
+          indexNew += typeof op.insert === 'string' ? op.insert.length : 1;
+        } else if (op.delete) {
+          // Insert the deleted text from oldDelta at this position, styled as redline
+          let deletedText = '';
+          let remaining = op.delete;
+          let ops = oldDelta.ops;
+          let offset = indexOld;
+          for (let i = 0; i < ops.length && remaining > 0; i++) {
+            const opOld = ops[i];
+            if (typeof opOld.insert === 'string') {
+              if (offset < opOld.insert.length) {
+                const take = Math.min(opOld.insert.length - offset, remaining);
+                deletedText += opOld.insert.substr(offset, take);
+                remaining -= take;
+                offset = 0;
+              } else {
+                offset -= opOld.insert.length;
+              }
+            } else {
+              if (offset === 0 && remaining > 0) {
+                deletedText += '\uFFFC'; // object replacement char for embeds
+                remaining--;
+              } else if (offset > 0) {
+                offset--;
+              }
+            }
+          }
+          if (deletedText) {
+            highlighted.insert(deletedText, { strike: true, color: '#C62828', background: '#FFCDD2' });
+          }
+          indexOld += op.delete;
+        }
+      });
+      // Preserve cursor position
+      const selection = this.quill.getSelection();
+      // Apply the highlighted diff to the newDelta correctly
+      const result = newDelta.compose(highlighted);
+      this.quill.setContents(result);
+      if (selection) {
+        this.quill.setSelection(selection.index, selection.length, 'silent');
+      }
+      this.lastDelta = this.quill.getContents();
+      console.log('[TrackChanges] Applied Delta.diff with true redline highlights.');
+    } finally {
+      this.isProcessingChange = false;
     }
   }
 
@@ -30,23 +179,27 @@ export class TrackChanges implements TrackChangesPlugin {
   public enable(): void {
     if (!this.enabled) {
       this.enabled = true;
-      this.quill.on('text-change', this.handleTextChange.bind(this));
+      console.log('[TrackChanges] Enabled.');
     }
   }
 
   public disable(): void {
     if (this.enabled) {
       this.enabled = false;
-      this.quill.off('text-change', this.handleTextChange.bind(this));
+      // Restore the last clean Delta, stripping highlights
+      const cleanDelta = stripHighlights(this.lastDelta);
+      this.quill.setContents(cleanDelta);
+      this.lastDelta = cleanDelta;
+      console.log('[TrackChanges] Disabled and highlights removed.');
     }
   }
 
   public getChanges(): Change[] {
-    return [...this.changes];
+    return this.changes;
   }
 
   public getPendingChanges(): Change[] {
-    return this.changes.filter(change => !change.accepted && !change.rejected);
+    return this.getChanges().filter(change => !change.accepted && !change.rejected);
   }
 
   public acceptChange(id: string): boolean {
@@ -84,33 +237,18 @@ export class TrackChanges implements TrackChangesPlugin {
         change.rejected = true;
       }
     });
+    this.quill.setContents(this.lastDelta);
     this.notifyChangesUpdate();
   }
 
   public clearChanges(): void {
     this.changes = [];
+    this.quill.setContents(this.lastDelta);
     this.notifyChangesUpdate();
   }
 
-  public processDelta(delta: any): void {
-    this.handleTextChange(delta);
-  }
-
-  public handleTextChange(delta: any): void {
-    if (!this.enabled) return;
-
-    const change: Change = {
-      id: Math.random().toString(36).substr(2, 9),
-      type: this.determineChangeType(delta),
-      author: this.options.currentUser,
-      timestamp: Date.now(),
-      text: delta.ops?.[0]?.insert,
-      length: delta.ops?.[0]?.delete,
-      attributes: delta.ops?.[0]?.attributes
-    };
-
-    this.changes.push(change);
-    this.notifyChangesUpdate();
+  public processDelta(): void {
+    this.handleTextChange();
   }
 
   public updateOptions(options: Partial<TrackChangesOptions>): void {
@@ -124,15 +262,32 @@ export class TrackChanges implements TrackChangesPlugin {
     return { ...this.options };
   }
 
-  private determineChangeType(delta: any): 'insert' | 'delete' | 'format' {
-    if (delta.ops?.[0]?.insert) return 'insert';
-    if (delta.ops?.[0]?.delete) return 'delete';
-    return 'format';
+  public getVersionHistory(): any[] {
+    return [this.lastDelta];
+  }
+
+  public createVersion(name?: string): any {
+    return { delta: this.lastDelta };
+  }
+
+  public loadVersion(version: any): void {
+    if (version && version.delta) {
+      this.quill.setContents(version.delta);
+      this.lastDelta = version.delta;
+    }
   }
 
   private notifyChangesUpdate(): void {
     if (this.options.onChangesUpdate) {
       this.options.onChangesUpdate(this.getChanges());
     }
+  }
+
+  public undo(): void {
+    // Not implemented for Delta-based diffing
+  }
+
+  public redo(): void {
+    // Not implemented for Delta-based diffing
   }
 } 
