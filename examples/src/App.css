@@ -157,7 +157,7 @@ body {
 /* Main content */
 .main {
   flex: 1;
-  padding: 4rem 0;
+  padding: 0;
 }
 
 /* Overview section */
@@ -451,7 +451,7 @@ body {
   padding: 3rem 0;
   text-align: center;
   color: #9ca3af;
-  margin-top: 4rem;
+  margin-top: 1rem;
 }
 
 /* Disabled buttons */

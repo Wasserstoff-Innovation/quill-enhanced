@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } f
 import Quill from 'quill';
 import { TrackChanges } from '../plugins/TrackChanges';
 import type { Change } from '../plugins/types';
-import { Toolbar } from './Toolbar';
 import { MarkdownPreview } from './MarkdownPreview';
 import { DiffViewer } from './DiffViewer';
 import { KeyboardShortcutsManager } from '../utils/keyboardShortcuts';
@@ -59,6 +58,9 @@ export interface EditorRef {
   setSelection: (index: number, length: number) => void;
   getFormat: () => Record<string, any>;
   format: (format: string, value: any) => void;
+  undo: () => void;
+  redo: () => void;
+  save: () => void;
   acceptChange: (changeId: string) => void;
   rejectChange: (changeId: string) => void;
   acceptAllChanges: () => void;
@@ -401,39 +403,24 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
     exportMarkdown: () => {
       const content = quillRef.current?.getContents();
       return content ? deltaToMarkdown(content) : '';
+    },
+    undo: () => quillRef.current?.history.undo(),
+    redo: () => quillRef.current?.history.redo(),
+    save: () => {
+      if (onSave && quillRef.current) {
+        onSave(quillRef.current.getContents());
+      }
     }
   }));
 
   return (
     <div className={`editor-root ${className}`}>
       {header}
-      <div className="editor-toolbar">
-        {isQuillReady && quillRef.current ? (
-          <Toolbar
-            quill={quillRef.current}
-            onExport={handleExport}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-          />
-        ) : (
-          <div className="editor-toolbar-loading">Initializing editor...</div>
-        )}
-        <FeatureToggles
-          showLineNumbers={localShowLineNumbers}
-          setShowLineNumbers={setLocalShowLineNumbers}
-          trackChanges={localTrackChanges}
-          setTrackChanges={setLocalTrackChanges}
-          autosave={localAutosave}
-          setAutosave={setLocalAutosave}
-          enableMarkdown={localEnableMarkdown}
-          setEnableMarkdown={setLocalEnableMarkdown}
-        />
-      </div>
       <div className="editor-content">
         {mode === 'markdown' ? (
           <MarkdownPreview content={markdownContent} />
         ) : (
-          <div ref={editorRef} />
+          <div ref={editorRef} className="quill-editor" />
         )}
       </div>
     </div>

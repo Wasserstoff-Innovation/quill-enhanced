@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Editor } from '../../src';
 // import '../../src/components/Editor.css';
 import './App.css';
+import { PlaygroundLayout } from './components/PlaygroundLayout';
 
 // Custom Notification Component
 const Notification: React.FC<{ message: string; type: string; onClose: () => void }> = ({ message, type, onClose }) => {
@@ -98,8 +99,8 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="main">
-        <div className="container">
-          {activeTab === 'overview' && (
+        {activeTab === 'overview' && (
+          <div className="container">
             <div className="overview">
               <div className="hero">
                 <h2>Professional WYSIWYG Editor SDK</h2>
@@ -147,52 +148,15 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === 'playground' && (
-            <div className="demo-section">
-              <h2>Playground</h2>
-              <p>Try all advanced features and see the code to use the SDK in your app.</p>
-              <div className="playground-main">
-                <div className="playground-editor">
-                  <Editor
-                    initialContent="<h1>Welcome to Wasserstoff Quill Enhanced!</h1><p>This is a <strong>playground</strong> for our WYSIWYG editor. Try the following features:</p><ul><li>Format text with <em>bold</em>, <u>underline</u>, and other styles</li><li>Create headers and lists</li><li>Add links and blockquotes</li><li>Change colors and alignment</li></ul><p>Start editing to see the magic happen! ✨</p>"
-                    placeholder="Experience all the advanced features..."
-                    showLineNumbers={showLineNumbers}
-                    trackChanges={trackChanges}
-                    autosave={autosave}
-                    enableMarkdown={enableMarkdown}
-                    onChange={setContent}
-                  />
-                </div>
-                <div className="playground-code">
-                  <h3>How to use in your app</h3>
-                  <pre>{`
-import { Editor } from '@wasserstoff/quill-enhanced';
-import '@wasserstoff/quill-enhanced/dist/index.css';
+        {activeTab === 'playground' && (
+          <PlaygroundLayout />
+        )}
 
-<Editor
-  initialContent={...}
-  placeholder="..."
-  showLineNumbers={${showLineNumbers}}
-  trackChanges={${trackChanges}}
-  autosave={${autosave}}
-  enableMarkdown={${enableMarkdown}}
-  onChange={...}
-/>
-                  `}</pre>
-                  <div className="playground-toggles">
-                    <label><input type="checkbox" checked={showLineNumbers} onChange={() => setShowLineNumbers(v => !v)} /> Show Line Numbers</label>
-                    <label><input type="checkbox" checked={trackChanges} onChange={() => setTrackChanges(v => !v)} /> Track Changes</label>
-                    <label><input type="checkbox" checked={autosave} onChange={() => setAutosave(v => !v)} /> Autosave</label>
-                    <label><input type="checkbox" checked={enableMarkdown} onChange={() => setEnableMarkdown(v => !v)} /> Markdown</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'docs' && (
+        {activeTab === 'docs' && (
+          <div className="container">
             <div className="docs-section">
               <h2>Documentation</h2>
               <div className="docs-content">
@@ -223,10 +187,56 @@ function MyApp() {
 };`}
                   </code></pre>
                 </section>
+                
+                <section className="doc-section">
+                  <h3>🔌 Plugin System</h3>
+                  <pre><code>{`// Using plugins programmatically
+import { TrackChangesPlugin, AutosavePlugin, LineNumbersPlugin } from '@wasserstoff/quill-enhanced';
+
+// Initialize plugins
+const trackChanges = new TrackChangesPlugin(quill, {
+  enabled: true,
+  currentUser: 'user-id',
+  onChangesUpdate: (changes) => console.log(changes)
+});
+
+const autosave = new AutosavePlugin(quill, {
+  enabled: true,
+  interval: 5000,
+  documentId: 'doc-123',
+  onSave: (content) => saveToServer(content)
+});
+
+const lineNumbers = new LineNumbersPlugin(quill, {
+  enabled: true
+});`}
+                  </code></pre>
+                </section>
+
+                <section className="doc-section">
+                  <h3>📤 Export Features</h3>
+                  <pre><code>{`import { exportToPDF, exportToDocx, deltaToMarkdown } from '@wasserstoff/quill-enhanced';
+
+// Export to different formats
+const content = editor.getContent();
+
+// PDF Export
+exportToPDF(content, 'document.pdf');
+
+// DOCX Export
+await exportToDocx(content, 'document.docx');
+
+// Markdown Export
+const markdown = deltaToMarkdown(content);
+
+// HTML Export
+const html = editor.exportHTML();`}
+                  </code></pre>
+                </section>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}

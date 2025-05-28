@@ -5,6 +5,7 @@ export type { Plugin, EditorConfig, EditorChangeEvent } from './core/types';
 
 // Components
 export { default as Editor } from './components/Editor';
+export type { EditorRef } from './components/Editor';
 export { Toolbar } from './components/Toolbar';
 export { DiffViewer } from './components/DiffViewer';
 export { MarkdownPreview } from './components/MarkdownPreview';
