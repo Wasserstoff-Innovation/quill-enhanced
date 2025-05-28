@@ -1,62 +1,77 @@
 import React, { useState, useRef } from 'react';
-import { Editor, EditorRef, Toolbar, MarkdownPreview } from '../../../src';
+import { Editor, EditorRef, MarkdownPreview } from '../../../src';
 import { FeaturePanel } from './FeaturePanel';
 import { CodePanel } from './CodePanel';
 import './PlaygroundLayout.css';
 
 interface PlaygroundConfig {
-  // Core Features
   showToolbar: boolean;
+  enableMarkdown: boolean;
+  readOnly: boolean;
   toolbarOptions: string[];
   placeholder: string;
-  readOnly: boolean;
-  
-  // Advanced Features
   showLineNumbers: boolean;
   trackChanges: boolean;
+  currentUser: string;
   autosave: boolean;
   autosaveInterval: number;
-  enableMarkdown: boolean;
-  
-  // Export Features
+  customCss: string;
   enablePdfExport: boolean;
   enableDocxExport: boolean;
   enableHtmlExport: boolean;
   enableMarkdownExport: boolean;
-  
-  // Collaboration Features
-  currentUser: string;
   enableComments: boolean;
   enableRealTimeSync: boolean;
-  
-  // Styling
   theme: 'light' | 'dark';
-  customCss: string;
 }
 
-const defaultConfig: PlaygroundConfig = {
-  showToolbar: true,
-  toolbarOptions: ['bold', 'italic', 'underline', 'header', 'list', 'link'],
-  placeholder: 'Start typing your content...',
-  readOnly: false,
-  showLineNumbers: false,
-  trackChanges: false,
-  autosave: false,
-  autosaveInterval: 5000,
-  enableMarkdown: false,
-  enablePdfExport: true,
-  enableDocxExport: true,
-  enableHtmlExport: true,
-  enableMarkdownExport: true,
-  currentUser: 'demo-user',
-  enableComments: false,
-  enableRealTimeSync: false,
-  theme: 'light',
-  customCss: ''
-};
+interface PlaygroundLayoutProps {
+  defaultConfig?: Partial<PlaygroundConfig>;
+}
 
-export const PlaygroundLayout: React.FC = () => {
-  const [config, setConfig] = useState<PlaygroundConfig>(defaultConfig);
+export const PlaygroundLayout: React.FC<PlaygroundLayoutProps> = ({ 
+  defaultConfig = {
+    showToolbar: true,
+    enableMarkdown: false,
+    readOnly: false,
+    toolbarOptions: [],
+    placeholder: '',
+    showLineNumbers: false,
+    trackChanges: false,
+    currentUser: '',
+    autosave: false,
+    autosaveInterval: 5000,
+    customCss: '',
+    enablePdfExport: true,
+    enableDocxExport: true,
+    enableHtmlExport: true,
+    enableMarkdownExport: true,
+    enableComments: false,
+    enableRealTimeSync: false,
+    theme: 'light'
+  }
+}) => {
+  const [config, setConfig] = useState<PlaygroundConfig>({
+    showToolbar: true,
+    enableMarkdown: false,
+    readOnly: false,
+    toolbarOptions: [],
+    placeholder: '',
+    showLineNumbers: false,
+    trackChanges: false,
+    currentUser: '',
+    autosave: false,
+    autosaveInterval: 5000,
+    customCss: '',
+    enablePdfExport: true,
+    enableDocxExport: true,
+    enableHtmlExport: true,
+    enableMarkdownExport: true,
+    enableComments: false,
+    enableRealTimeSync: false,
+    theme: 'light',
+    ...defaultConfig
+  });
   const [editorContent, setEditorContent] = useState('');
   const [viewMode, setViewMode] = useState<'editor' | 'code'>('editor');
   const [activeFeatures, setActiveFeatures] = useState<Record<string, boolean>>({});
@@ -70,12 +85,25 @@ export const PlaygroundLayout: React.FC = () => {
     setEditorContent(content);
   };
 
-  const handleExport = (format: 'docx' | 'pdf') => {
+  const handleExport = (format: 'docx' | 'pdf' | 'html' | 'markdown') => {
     if (editorRef.current) {
-      if (format === 'docx') {
-        editorRef.current.exportDocx();
-      } else {
-        editorRef.current.exportPDF();
+      switch (format) {
+        case 'docx':
+          editorRef.current.exportDocx();
+          break;
+        case 'pdf':
+          editorRef.current.exportPDF();
+          break;
+        case 'html':
+          // Handle HTML export
+          const content = editorRef.current.getContent();
+          console.log('HTML content:', content);
+          break;
+        case 'markdown':
+          // Handle Markdown export
+          const markdownContent = editorRef.current.getContent();
+          console.log('Markdown content:', markdownContent);
+          break;
       }
     }
   };
@@ -164,14 +192,6 @@ export const PlaygroundLayout: React.FC = () => {
             </div>
             {viewMode === 'editor' ? (
               <>
-                {config.showToolbar && editorRef.current && (
-                  <Toolbar 
-                    quill={editorRef.current}
-                    onExport={handleExport}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
-                  />
-                )}
                 {config.enableMarkdown ? (
                   <MarkdownPreview content={editorContent} />
                 ) : (
@@ -186,6 +206,14 @@ export const PlaygroundLayout: React.FC = () => {
                     autosaveInterval={config.autosaveInterval}
                     enableMarkdown={config.enableMarkdown}
                     onChange={handleEditorChange}
+                    showToolbar={config.showToolbar}
+                    theme={config.theme}
+                    exportOptions={{
+                      enablePdfExport: config.enablePdfExport,
+                      enableDocxExport: config.enableDocxExport,
+                      enableHtmlExport: config.enableHtmlExport,
+                      enableMarkdownExport: config.enableMarkdownExport
+                    }}
                     initialContent="<h1>Welcome to the Advanced Playground!</h1><p>This editor updates in real-time based on your configuration. Try changing the settings on the left to see how they affect the editor behavior.</p><p>You can format text with <strong>bold</strong>, <em>italic</em>, and <u>underline</u> styles.</p>"
                   />
                 )}

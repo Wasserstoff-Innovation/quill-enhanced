@@ -12,6 +12,7 @@ import { deltaToMarkdown, fromMarkdown } from '../utils/markdownUtils';
 import { exportToDocx, exportToPDF } from '../utils/exportUtils';
 import './Editor.css';
 import { FaBold, FaItalic, FaUnderline, FaListUl, FaListOl, FaHeading, FaAlignLeft, FaAlignCenter, FaAlignRight, FaCode, FaQuoteRight, FaUndo, FaRedo, FaSave, FaEye, FaMarkdown, FaDownload } from 'react-icons/fa';
+import { Toolbar } from './Toolbar';
 
 const Delta = Quill.import('delta');
 
@@ -39,9 +40,14 @@ interface EditorProps {
   className?: string;
   readOnly?: boolean;
   autosaveInterval?: number;
-  toolbar?: {
-    container: (string | { [key: string]: any })[][];
+  showToolbar?: boolean;
+  exportOptions?: {
+    enablePdfExport?: boolean;
+    enableDocxExport?: boolean;
+    enableHtmlExport?: boolean;
+    enableMarkdownExport?: boolean;
   };
+  theme?: string;
 }
 
 export interface EditorRef {
@@ -109,7 +115,7 @@ const FeatureToggles: React.FC<FeatureTogglesProps> = ({ showLineNumbers, setSho
   </div>
 );
 
-const Editor = forwardRef<EditorRef, EditorProps>(({
+export const Editor: React.FC<EditorProps> = React.forwardRef<EditorRef, EditorProps>(({
   initialContent = '',
   value,
   documentId,
@@ -132,7 +138,15 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
   onChange,
   className = '',
   readOnly = false,
-  autosaveInterval = 5000
+  autosaveInterval = 5000,
+  showToolbar = true,
+  exportOptions = {
+    enablePdfExport: true,
+    enableDocxExport: true,
+    enableHtmlExport: true,
+    enableMarkdownExport: true
+  },
+  theme
 }, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
@@ -295,14 +309,25 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
   }, [value]);
 
   // Handle export
-  const handleExport = async (format: 'docx' | 'pdf') => {
+  const handleExport = async (format: 'docx' | 'pdf' | 'html' | 'markdown') => {
     if (!quillRef.current) return;
 
     const content = quillRef.current.getContents();
-    if (format === 'docx') {
-      await exportToDocx(content, 'document.docx');
-    } else {
-      exportToPDF(content, 'document.pdf');
+    switch (format) {
+      case 'docx':
+        await exportToDocx(content, 'document.docx');
+        break;
+      case 'pdf':
+        exportToPDF(content, 'document.pdf');
+        break;
+      case 'html':
+        const htmlContent = quillRef.current.root.innerHTML;
+        console.log('HTML content:', htmlContent);
+        break;
+      case 'markdown':
+        const markdownContent = deltaToMarkdown(content);
+        console.log('Markdown content:', markdownContent);
+        break;
     }
   };
 
@@ -414,8 +439,17 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
   }));
 
   return (
-    <div className={`editor-root ${className}`}>
+    <div className={`editor-root ${readOnly ? 'read-only' : ''} ${theme === 'dark' ? 'dark' : ''}`}>
       {header}
+      {showToolbar && !readOnly && (
+        <Toolbar 
+          quill={quillRef.current}
+          onExport={handleExport}
+          onUndo={() => quillRef.current?.history.undo()}
+          onRedo={() => quillRef.current?.history.redo()}
+          exportOptions={exportOptions}
+        />
+      )}
       <div className="editor-content">
         {mode === 'markdown' ? (
           <MarkdownPreview content={markdownContent} />
@@ -423,6 +457,12 @@ const Editor = forwardRef<EditorRef, EditorProps>(({
           <div ref={editorRef} className="quill-editor" />
         )}
       </div>
+      {readOnly && (
+        <div className="editor-readonly-notice">
+          <span className="editor-readonly-icon">🔒</span>
+          <span className="editor-readonly-text">This document is in read-only mode</span>
+        </div>
+      )}
     </div>
   );
 });

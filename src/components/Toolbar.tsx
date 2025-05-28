@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Bold,
   Italic,
@@ -20,23 +20,51 @@ import {
   Highlighter,
   Download,
   CheckCircle,
-  XCircle
+  XCircle,
+  FileText,
+  FileCode,
+  FileDown
 } from 'lucide-react';
+
+interface ExportOption {
+  format: 'docx' | 'pdf' | 'html' | 'markdown';
+  label: string;
+  icon: JSX.Element;
+}
 
 interface ToolbarProps {
   quill: any;
   className?: string;
-  onExport?: (format: 'docx' | 'pdf') => void;
+  onExport?: (format: 'docx' | 'pdf' | 'html' | 'markdown') => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  exportOptions?: {
+    enablePdfExport?: boolean;
+    enableDocxExport?: boolean;
+    enableHtmlExport?: boolean;
+    enableMarkdownExport?: boolean;
+  };
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ quill, className = '', onExport, onUndo, onRedo }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ 
+  quill, 
+  className = '', 
+  onExport, 
+  onUndo, 
+  onRedo,
+  exportOptions = {
+    enablePdfExport: true,
+    enableDocxExport: true,
+    enableHtmlExport: true,
+    enableMarkdownExport: true
+  }
+}) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showBgColorPicker, setShowBgColorPicker] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const colorInputRef = useRef<HTMLInputElement>(null);
   const bgColorInputRef = useRef<HTMLInputElement>(null);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
 
   const handleFormat = (format: string, value: any) => {
     if (!quill) return;
@@ -151,7 +179,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ quill, className = '', onExpor
     setShowDownloadMenu(!showDownloadMenu);
   };
 
-  const handleExportClick = (format: 'docx' | 'pdf') => {
+  const handleExportClick = (format: 'docx' | 'pdf' | 'html' | 'markdown') => {
     setShowDownloadMenu(false);
     onExport?.(format);
   };
@@ -166,13 +194,55 @@ export const Toolbar: React.FC<ToolbarProps> = ({ quill, className = '', onExpor
     return {};
   };
 
+  const currentFormat = getCurrentFormat();
+
+  // Filter export options based on enabled features
+  const enabledExportOptions = [
+    exportOptions.enableDocxExport ? {
+      format: 'docx' as const,
+      label: 'Export as DOCX',
+      icon: <FileText size={16} />
+    } : null,
+    exportOptions.enablePdfExport ? {
+      format: 'pdf' as const,
+      label: 'Export as PDF',
+      icon: <FileText size={16} />
+    } : null,
+    exportOptions.enableHtmlExport ? {
+      format: 'html' as const,
+      label: 'Export as HTML',
+      icon: <FileCode size={16} />
+    } : null,
+    exportOptions.enableMarkdownExport ? {
+      format: 'markdown' as const,
+      label: 'Export as Markdown',
+      icon: <FileDown size={16} />
+    } : null
+  ].filter((option): option is NonNullable<typeof option> => option !== null);
+
+  // Close download menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+
+    if (showDownloadMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDownloadMenu]);
+
   if (!quill) {
     return <div className={`editor-toolbar-container ${className}`.trim()}>
       <div className="editor-toolbar-loading">Loading toolbar...</div>
     </div>;
   }
-
-  const currentFormat = getCurrentFormat();
 
   return (
     <div className={`editor-toolbar-container ${className}`.trim()}>
@@ -228,17 +298,34 @@ export const Toolbar: React.FC<ToolbarProps> = ({ quill, className = '', onExpor
           <button title="Highlight" className="toolbar-button" onClick={handleBgColorClick}><Highlighter size={20} /></button>
           <input ref={bgColorInputRef} type="color" onChange={handleBgColorChange} style={{ display: 'none' }} title="Background Color" />
         </div>
-        <div className="editor-toolbar-divider" />
-        {/* Export */}
-        <div className="editor-toolbar-group">
-          <button title="Download" className="toolbar-button" onClick={handleDownloadClick}><Download size={20} /></button>
-          {showDownloadMenu && (
-            <div className="download-menu">
-              <button onClick={() => handleExportClick('docx')}><CheckCircle size={16} /> Export as DOCX</button>
-              <button onClick={() => handleExportClick('pdf')}><XCircle size={16} /> Export as PDF</button>
+        {enabledExportOptions.length > 0 && (
+          <>
+            <div className="editor-toolbar-divider" />
+            {/* Export */}
+            <div className="editor-toolbar-group" ref={downloadMenuRef}>
+              <button 
+                title="Download" 
+                className={`toolbar-button ${showDownloadMenu ? 'active' : ''}`} 
+                onClick={handleDownloadClick}
+              >
+                <Download size={20} />
+              </button>
+              {showDownloadMenu && (
+                <div className="download-menu">
+                  {enabledExportOptions.map((option) => (
+                    <button 
+                      key={option.format} 
+                      onClick={() => handleExportClick(option.format)}
+                      title={`Export as ${option.label}`}
+                    >
+                      {option.icon} {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

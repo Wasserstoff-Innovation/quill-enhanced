@@ -50,13 +50,13 @@ export const FeaturePanel: React.FC<FeaturePanelProps> = ({ config, onConfigChan
         <h4>📝 Core Features</h4>
         
         <div className="feature-item">
-          <label>
+          <label className="feature-toggle">
             <input
               type="checkbox"
               checked={config.showToolbar}
               onChange={(e) => handleChange('showToolbar', e.target.checked)}
             />
-            Show Toolbar
+            <span>Show Toolbar</span>
           </label>
         </div>
         
@@ -71,13 +71,13 @@ export const FeaturePanel: React.FC<FeaturePanelProps> = ({ config, onConfigChan
         </div>
         
         <div className="feature-item">
-          <label>
+          <label className="feature-toggle">
             <input
               type="checkbox"
               checked={config.readOnly}
               onChange={(e) => handleChange('readOnly', e.target.checked)}
             />
-            Read Only Mode
+            <span>Read Only Mode</span>
           </label>
         </div>
       </div>
@@ -143,9 +143,9 @@ export const FeaturePanel: React.FC<FeaturePanelProps> = ({ config, onConfigChan
               checked={config.enableMarkdown}
               onChange={(e) => handleChange('enableMarkdown', e.target.checked)}
             />
-            Markdown Support
+            Markdown Mode
           </label>
-          <span className="feature-description">Enable markdown shortcuts and preview</span>
+          <span className="feature-description">Enable markdown preview and editing</span>
         </div>
       </div>
 
@@ -162,6 +162,7 @@ export const FeaturePanel: React.FC<FeaturePanelProps> = ({ config, onConfigChan
             />
             PDF Export
           </label>
+          <span className="feature-description">Enable PDF export functionality</span>
         </div>
         
         <div className="feature-item">
@@ -173,6 +174,7 @@ export const FeaturePanel: React.FC<FeaturePanelProps> = ({ config, onConfigChan
             />
             DOCX Export
           </label>
+          <span className="feature-description">Enable DOCX export functionality</span>
         </div>
         
         <div className="feature-item">
@@ -184,6 +186,7 @@ export const FeaturePanel: React.FC<FeaturePanelProps> = ({ config, onConfigChan
             />
             HTML Export
           </label>
+          <span className="feature-description">Enable HTML export functionality</span>
         </div>
         
         <div className="feature-item">
@@ -195,6 +198,7 @@ export const FeaturePanel: React.FC<FeaturePanelProps> = ({ config, onConfigChan
             />
             Markdown Export
           </label>
+          <span className="feature-description">Enable Markdown export functionality</span>
         </div>
       </div>
 

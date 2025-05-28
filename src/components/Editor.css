@@ -117,8 +117,8 @@
 }
 
 .editor-toolbar-group {
+  position: relative;
   display: flex;
-  gap: 4px;
   align-items: center;
 }
 
@@ -217,15 +217,16 @@
 
 .download-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   right: 0;
   background: white;
   border: 1px solid var(--editor-border-light);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  min-width: 160px;
-  z-index: 1000;
+  min-width: 180px;
+  z-index: 9999;
   overflow: hidden;
+  display: block !important; /* Force display when shown */
 }
 
 .download-menu button {
@@ -240,10 +241,13 @@
   align-items: center;
   gap: 0.5rem;
   transition: background 0.15s;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .download-menu button:hover {
   background: var(--editor-toolbar-btn-bg-hover);
+  color: var(--editor-toolbar-btn-hover);
 }
 
 .editor-root.dark .download-menu {
@@ -257,6 +261,7 @@
 
 .editor-root.dark .download-menu button:hover {
   background: var(--editor-toolbar-btn-bg-dark-hover);
+  color: var(--editor-toolbar-btn-hover);
 }
 
 /* Toggle Switches */
@@ -520,4 +525,67 @@ label:has(input:checked) {
 .ql-editor li {
   margin-left: 0;
   padding-left: 0.2em;
+}
+
+/* Read-only mode styles */
+.editor-root.read-only .editor-content {
+  background: var(--editor-content-bg);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.editor-readonly-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fff3cd;
+  border-top: 1px solid #ffeeba;
+  color: #856404;
+  font-size: 0.9rem;
+  border-radius: 0 0 var(--editor-radius) var(--editor-radius);
+}
+
+.editor-root.dark .editor-readonly-notice {
+  background: #2d2a1f;
+  border-color: #3d3a2f;
+  color: #ffd700;
+}
+
+.editor-readonly-icon {
+  font-size: 1.1rem;
+}
+
+.editor-readonly-text {
+  flex: 1;
+}
+
+/* Disable interactions in read-only mode */
+.editor-root.read-only .ql-editor {
+  cursor: default;
+  user-select: text;
+  pointer-events: none;
+}
+
+.editor-root.read-only .ql-editor * {
+  pointer-events: none;
+}
+
+/* Dark mode styles */
+.editor-root.dark {
+  background: var(--editor-bg-dark);
+  border-color: var(--editor-border-dark);
+  color: var(--editor-text-dark);
+}
+
+.editor-root.dark .editor-content {
+  background: var(--editor-bg-dark);
+}
+
+.editor-root.dark .ql-editor {
+  color: var(--editor-text-dark);
+}
+
+.editor-root.dark .ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.5);
 } 
