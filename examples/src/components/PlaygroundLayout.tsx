@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Editor, EditorRef, MarkdownPreview } from '../../../src';
+import { Editor, EditorRef, MarkdownPreview } from '@wasserstoff/quill-enhanced';
 import { FeaturePanel } from './FeaturePanel';
 import { CodePanel } from './CodePanel';
 import './PlaygroundLayout.css';

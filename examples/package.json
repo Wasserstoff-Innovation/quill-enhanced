@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@wasserstoff/quill-enhanced": "^1.0.3",
+    "@wasserstoff/quill-enhanced": "^1.1.0",
     "quill": "^2.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Editor } from '../../src';
+import { Editor } from '@wasserstoff/quill-enhanced';
 // import '../../src/components/Editor.css';
 import './App.css';
 import { PlaygroundLayout } from './components/PlaygroundLayout';

@@ -1,6 +1,6 @@
 {
   "name": "@wasserstoff/quill-enhanced",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "A powerful, feature-rich WYSIWYG editor SDK built on top of Quill",
   "type": "module",
   "main": "./dist/index.js",
