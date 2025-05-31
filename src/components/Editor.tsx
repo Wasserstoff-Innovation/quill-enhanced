@@ -283,7 +283,7 @@ export const Editor: React.FC<EditorProps> = React.forwardRef<EditorRef, EditorP
       autosavePlugin.setInterval(autosaveInterval);
     }
 
-  }, [localShowLineNumbers, localTrackChanges, localAutosave, currentUser, onChangesUpdate, onSave, autosaveInterval, documentId, trackChangesPlugin, lineNumbersPlugin, autosavePlugin]);
+  }, [localShowLineNumbers, localTrackChanges, localAutosave, currentUser, onChangesUpdate, onSave, autosaveInterval, documentId]);
 
   // Handle content changes
   useEffect(() => {

@@ -93,22 +93,46 @@ export class TrackChanges implements TrackChangesPlugin {
     const style = document.createElement('style');
     style.id = 'track-changes-styles';
     style.textContent = `
-      .ql-editor .insert {
-        background-color: rgba(200, 230, 201, 0.3);
+      /* Styles for inserted content (green highlights) */
+      .ql-editor [style*="background: rgb(204, 232, 204)"],
+      .ql-editor [style*="background-color: rgb(204, 232, 204)"],
+      .ql-editor [style*="background:#cce8cc"],
+      .ql-editor [style*="background: #cce8cc"] {
+        background-color: rgba(200, 230, 201, 0.3) !important;
         border-bottom: 2px solid #4CAF50;
       }
-      .ql-editor .delete, .ql-editor [style*="line-through"] {
-        background-color: rgba(255, 205, 210, 0.3);
-        text-decoration: line-through;
-        color: #C62828;
+      
+      /* Styles for deleted content (red strikethrough) */
+      .ql-editor [style*="text-decoration: line-through"],
+      .ql-editor [style*="text-decoration:line-through"] {
+        background-color: rgba(255, 205, 210, 0.3) !important;
+        text-decoration: line-through !important;
+        color: #C62828 !important;
       }
-      .ql-editor.track-changes-disabled .delete,
-      .ql-editor.track-changes-disabled [style*="line-through"] {
+      
+      /* Additional targeting for deleted content with background */
+      .ql-editor [style*="background: rgb(255, 205, 210)"],
+      .ql-editor [style*="background-color: rgb(255, 205, 210)"],
+      .ql-editor [style*="background:#FFCDD2"],
+      .ql-editor [style*="background: #FFCDD2"] {
+        text-decoration: line-through !important;
+      }
+      
+      /* When track changes is disabled, hide deleted content */
+      .ql-editor.track-changes-disabled [style*="text-decoration: line-through"],
+      .ql-editor.track-changes-disabled [style*="text-decoration:line-through"],
+      .ql-editor.track-changes-disabled [style*="background: rgb(255, 205, 210)"],
+      .ql-editor.track-changes-disabled [style*="background-color: rgb(255, 205, 210)"] {
         display: none !important;
       }
-      .ql-editor.track-changes-disabled .insert {
-        background-color: transparent;
-        border-bottom: none;
+      
+      /* When track changes is disabled, remove highlights from inserted content */
+      .ql-editor.track-changes-disabled [style*="background: rgb(204, 232, 204)"],
+      .ql-editor.track-changes-disabled [style*="background-color: rgb(204, 232, 204)"],
+      .ql-editor.track-changes-disabled [style*="background:#cce8cc"],
+      .ql-editor.track-changes-disabled [style*="background: #cce8cc"] {
+        background-color: transparent !important;
+        border-bottom: none !important;
       }
     `;
     document.head.appendChild(style);
@@ -138,32 +162,43 @@ export class TrackChanges implements TrackChangesPlugin {
           highlighted.retain(typeof op.insert === 'string' ? op.insert.length : 1, { background: '#cce8cc', color: '#003700' });
           indexNew += typeof op.insert === 'string' ? op.insert.length : 1;
         } else if (op.delete) {
-          // Insert the deleted text from oldDelta at this position, styled as redline
+          // Check if we're deleting newly added content (green highlights)
           let deletedText = '';
+          let hasGreenHighlight = false;
           let remaining = op.delete;
-          let ops = oldDelta.ops;
-          let offset = indexOld;
-          for (let i = 0; i < ops.length && remaining > 0; i++) {
-            const opOld = ops[i];
+          let currentIndex = 0;
+          
+          // Go through oldDelta to find what was deleted
+          for (let i = 0; i < oldDelta.ops.length && remaining > 0; i++) {
+            const opOld = oldDelta.ops[i];
             if (typeof opOld.insert === 'string') {
-              if (offset < opOld.insert.length) {
-                const take = Math.min(opOld.insert.length - offset, remaining);
-                deletedText += opOld.insert.substr(offset, take);
+              const opLength = opOld.insert.length;
+              
+              if (indexOld >= currentIndex && indexOld < currentIndex + opLength) {
+                const startWithinOp = indexOld - currentIndex;
+                const take = Math.min(opLength - startWithinOp, remaining);
+                deletedText += opOld.insert.substr(startWithinOp, take);
+                
+                // Check if this content had green highlight (was an addition)
+                if (opOld.attributes && opOld.attributes.background === '#cce8cc') {
+                  hasGreenHighlight = true;
+                }
+                
                 remaining -= take;
-                offset = 0;
-              } else {
-                offset -= opOld.insert.length;
               }
-            } else {
-              if (offset === 0 && remaining > 0) {
-                deletedText += '\uFFFC'; // object replacement char for embeds
+              currentIndex += opLength;
+            } else if (opOld.insert) {
+              // Handle embeds
+              if (indexOld === currentIndex && remaining > 0) {
+                deletedText += '\uFFFC';
                 remaining--;
-              } else if (offset > 0) {
-                offset--;
               }
+              currentIndex++;
             }
           }
-          if (deletedText) {
+          
+          // Only insert deleted text as strikethrough if it wasn't a green highlight (addition)
+          if (deletedText && !hasGreenHighlight) {
             highlighted.insert(deletedText, { strike: true, color: '#C62828', background: '#FFCDD2' });
           }
           indexOld += op.delete;
@@ -195,8 +230,8 @@ export class TrackChanges implements TrackChangesPlugin {
       const editor = this.quill.container.querySelector('.ql-editor');
       if (editor) {
         editor.classList.remove('track-changes-disabled');
+        console.log('[TrackChanges] Enabled. Classes:', editor.className);
       }
-      console.log('[TrackChanges] Enabled.');
     }
   }
 
@@ -207,8 +242,8 @@ export class TrackChanges implements TrackChangesPlugin {
       const editor = this.quill.container.querySelector('.ql-editor');
       if (editor) {
         editor.classList.add('track-changes-disabled');
+        console.log('[TrackChanges] Disabled - deleted content hidden via CSS. Classes:', editor.className);
       }
-      console.log('[TrackChanges] Disabled - deleted content hidden via CSS.');
     }
   }
 
