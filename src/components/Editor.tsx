@@ -234,26 +234,29 @@ export const Editor: React.FC<EditorProps> = React.forwardRef<EditorRef, EditorP
     }
 
     // Handle Track Changes Plugin
-    if (localTrackChanges && !trackChangesPlugin) {
-      console.log('Initializing Track Changes Plugin');
-      const plugin = new TrackChanges(quill, {
-        enabled: true,
-        currentUser,
-        onChangesUpdate: (changes: Change[]) => {
-          onChangesUpdate?.(changes);
-          console.log('Changes updated:', changes);
-        }
-      });
-      setTrackChangesPlugin(plugin);
-    } else if (!localTrackChanges && trackChangesPlugin) {
+    if (localTrackChanges) {
+      if (!trackChangesPlugin) {
+        console.log('Initializing Track Changes Plugin');
+        const plugin = new TrackChanges(quill, {
+          enabled: true,
+          currentUser,
+          onChangesUpdate: (changes: Change[]) => {
+            onChangesUpdate?.(changes);
+            console.log('Changes updated:', changes);
+          }
+        });
+        setTrackChangesPlugin(plugin);
+      } else {
+        // Enable existing plugin
+        trackChangesPlugin.enable();
+        trackChangesPlugin.updateOptions({
+          currentUser
+        });
+      }
+    } else if (trackChangesPlugin) {
+      // Just disable, don't destroy the plugin
       console.log('Disabling Track Changes Plugin');
       trackChangesPlugin.disable();
-      setTrackChangesPlugin(null);
-    } else if (trackChangesPlugin) {
-      trackChangesPlugin.updateOptions({
-        enabled: localTrackChanges,
-        currentUser
-      });
     }
 
     // Handle Autosave Plugin

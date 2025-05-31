@@ -87,7 +87,11 @@ export class TrackChanges implements TrackChangesPlugin {
   }
 
   private addTrackChangesStyles(): void {
+    // Check if styles already exist
+    if (document.getElementById('track-changes-styles')) return;
+    
     const style = document.createElement('style');
+    style.id = 'track-changes-styles';
     style.textContent = `
       .ql-editor .insert {
         background-color: rgba(200, 230, 201, 0.3);
@@ -97,6 +101,14 @@ export class TrackChanges implements TrackChangesPlugin {
         background-color: rgba(255, 205, 210, 0.3);
         text-decoration: line-through;
         color: #C62828;
+      }
+      .ql-editor.track-changes-disabled .delete,
+      .ql-editor.track-changes-disabled [style*="line-through"] {
+        display: none !important;
+      }
+      .ql-editor.track-changes-disabled .insert {
+        background-color: transparent;
+        border-bottom: none;
       }
     `;
     document.head.appendChild(style);
@@ -179,6 +191,11 @@ export class TrackChanges implements TrackChangesPlugin {
   public enable(): void {
     if (!this.enabled) {
       this.enabled = true;
+      // Remove the CSS class that hides deleted content
+      const editor = this.quill.container.querySelector('.ql-editor');
+      if (editor) {
+        editor.classList.remove('track-changes-disabled');
+      }
       console.log('[TrackChanges] Enabled.');
     }
   }
@@ -186,11 +203,12 @@ export class TrackChanges implements TrackChangesPlugin {
   public disable(): void {
     if (this.enabled) {
       this.enabled = false;
-      // Restore the last clean Delta, stripping highlights
-      const cleanDelta = stripHighlights(this.lastDelta);
-      this.quill.setContents(cleanDelta);
-      this.lastDelta = cleanDelta;
-      console.log('[TrackChanges] Disabled and highlights removed.');
+      // Add CSS class to hide deleted content
+      const editor = this.quill.container.querySelector('.ql-editor');
+      if (editor) {
+        editor.classList.add('track-changes-disabled');
+      }
+      console.log('[TrackChanges] Disabled - deleted content hidden via CSS.');
     }
   }
 
