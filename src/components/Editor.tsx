@@ -368,16 +368,12 @@ export const Editor: React.FC<EditorProps> = React.forwardRef<EditorRef, EditorP
 
   // Undo/Redo handlers
   const handleUndo = () => {
-    if (localTrackChanges && trackChangesPlugin) {
-      trackChangesPlugin.undo();
-    } else if (quillRef.current && quillRef.current.history) {
+    if (quillRef.current && quillRef.current.history) {
       quillRef.current.history.undo();
     }
   };
   const handleRedo = () => {
-    if (localTrackChanges && trackChangesPlugin) {
-      trackChangesPlugin.redo();
-    } else if (quillRef.current && quillRef.current.history) {
+    if (quillRef.current && quillRef.current.history) {
       quillRef.current.history.redo();
     }
   };
@@ -452,6 +448,14 @@ export const Editor: React.FC<EditorProps> = React.forwardRef<EditorRef, EditorP
   return (
     <div className={`editor-root ${readOnly ? 'read-only' : ''} ${theme === 'dark' ? 'dark' : ''}`}>
       {header}
+      {localTrackChanges && (
+        <div className="track-changes-notice">
+          <span className="track-changes-notice-icon">ℹ️</span>
+          <span className="track-changes-notice-text">
+            Track changes is active. Undo/redo may behave differently while tracking changes.
+          </span>
+        </div>
+      )}
       {showToolbar && !readOnly && (
         <Toolbar 
           quill={quillRef.current}

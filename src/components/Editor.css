@@ -588,4 +588,24 @@ label:has(input:checked) {
 
 .editor-root.dark .ql-editor.ql-blank::before {
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* Track changes notice */
+.track-changes-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  font-size: 0.85rem;
+}
+
+.track-changes-notice-icon {
+  font-size: 1rem;
+}
+
+.track-changes-notice-text {
+  flex: 1;
 } 

@@ -94,6 +94,18 @@ export class LineNumbersPlugin {
     this.container.innerHTML = '';
     this.numbers = [];
 
+    // Get the computed line height from the editor
+    const editorElement = this.quill.root;
+    const computedStyle = window.getComputedStyle(editorElement);
+    const lineHeight = computedStyle.lineHeight;
+    const fontSize = computedStyle.fontSize;
+    const paddingTop = computedStyle.paddingTop;
+    const paddingBottom = computedStyle.paddingBottom;
+
+    // Apply matching styles to container
+    this.container.style.paddingTop = paddingTop;
+    this.container.style.paddingBottom = paddingBottom;
+
     // Add line numbers only for non-list lines
     const quillLines = this.quill.getLines();
     for (let i = 0, visualLine = 0; i < lineCount; i++) {
@@ -107,13 +119,13 @@ export class LineNumbersPlugin {
         const number = document.createElement('div');
         number.className = 'ql-line-number-plugin';
         number.style.cssText = `
-          height: 1.42em;
-          line-height: 1.42em;
+          height: ${lineHeight};
+          line-height: ${lineHeight};
           padding-right: ${this.options.style?.paddingRight || '10px'};
           text-align: ${this.options.style?.textAlign || 'right'};
           color: ${this.options.style?.color || '#999'};
-          font-size: ${this.options.style?.fontSize || '14px'};
-          font-family: ${this.options.style?.fontFamily || 'monospace'};
+          font-size: ${this.options.style?.fontSize || fontSize};
+          font-family: ${this.options.style?.fontFamily || computedStyle.fontFamily};
           user-select: ${this.options.style?.userSelect || 'none'};
           box-sizing: border-box;
         `;
@@ -123,6 +135,9 @@ export class LineNumbersPlugin {
         visualLine++;
       }
     }
+    
+    // Sync scroll position
+    this.syncScroll();
   }
 
   private syncScroll(): void {

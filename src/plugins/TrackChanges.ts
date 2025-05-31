@@ -65,6 +65,7 @@ export class TrackChanges implements TrackChangesPlugin {
   private redoStack: Change[][] = [];
   private isProcessingUndoRedo: boolean = false;
   private isProcessingChange: boolean = false;
+  private textChangeHandler: any;
 
   constructor(quill: Quill, options: TrackChangesOptions) {
     this.quill = quill;
@@ -74,14 +75,18 @@ export class TrackChanges implements TrackChangesPlugin {
     };
     this.enabled = this.options.enabled ?? true;
     this.lastDelta = quill.getContents();
+    // Create the handler once with proper signature
+    this.textChangeHandler = debounce((delta: any, oldDelta: any, source: string) => {
+      this.handleTextChange(delta, oldDelta, source);
+    }, 10);
     this.initialize();
   }
 
   private initialize(): void {
+    this.addTrackChangesStyles();
     if (this.enabled) {
-      this.addTrackChangesStyles();
-      const debouncedTextChange = debounce(this.handleTextChange.bind(this), 100);
-      this.quill.on('text-change', debouncedTextChange);
+      // Attach the handler
+      this.quill.on('text-change', this.textChangeHandler);
       console.log('[TrackChanges] Initialized and event handler attached.');
     }
   }
@@ -138,82 +143,113 @@ export class TrackChanges implements TrackChangesPlugin {
     document.head.appendChild(style);
   }
 
-  public handleTextChange(): void {
-    if (!this.enabled || this.isProcessingChange || this.isProcessingUndoRedo) return;
+  public handleTextChange(delta: any, oldDelta: any, source: string): void {
+    if (!this.enabled || this.isProcessingChange) return;
+    
+    // Update our reference for any change
+    const currentContents = this.quill.getContents();
+    
+    // For non-user sources (like undo/redo), just update our reference
+    if (source !== 'user') {
+      this.lastDelta = currentContents;
+      return;
+    }
+    
+    // For user edits, apply track changes
     this.isProcessingChange = true;
     try {
-      const oldDelta = this.lastDelta;
-      const newDelta = this.quill.getContents();
-      if (JSON.stringify(oldDelta) === JSON.stringify(newDelta)) {
+      const oldContents = this.lastDelta;
+      let newContents = currentContents;
+      
+      // Normalize non-breaking spaces to regular spaces in the new content
+      // This helps prevent fragmentation issues
+      const normalizedOps = newContents.ops.map((op: any) => {
+        if (op.insert && typeof op.insert === 'string') {
+          return {
+            ...op,
+            insert: op.insert.replace(/\u00A0/g, ' ')
+          };
+        }
+        return op;
+      });
+      newContents = new Delta(normalizedOps);
+      
+      // Quick check if anything changed
+      if (JSON.stringify(oldContents) === JSON.stringify(newContents)) {
         this.isProcessingChange = false;
         return;
       }
+      
       // Use Quill's Delta.diff for accurate diffing
-      const diffDelta = oldDelta.diff(newDelta);
-      let indexOld = 0;
-      let indexNew = 0;
+      const diffDelta = oldContents.diff(newContents);
       let highlighted = new Delta();
+      let processedIndex = 0;
+      
       diffDelta.ops.forEach((op: any) => {
         if (op.retain) {
           highlighted.retain(op.retain);
-          indexOld += op.retain;
-          indexNew += op.retain;
+          processedIndex += op.retain;
         } else if (op.insert) {
-          highlighted.retain(typeof op.insert === 'string' ? op.insert.length : 1, { background: '#cce8cc', color: '#003700' });
-          indexNew += typeof op.insert === 'string' ? op.insert.length : 1;
+          // New content - highlight as insertion
+          const insertLength = typeof op.insert === 'string' ? op.insert.length : 1;
+          highlighted.retain(insertLength, { background: '#cce8cc', color: '#003700' });
         } else if (op.delete) {
-          // Check if we're deleting newly added content (green highlights)
+          // Extract deleted content from the old delta
           let deletedText = '';
-          let hasGreenHighlight = false;
-          let remaining = op.delete;
-          let currentIndex = 0;
+          let deleteCount = op.delete;
+          let currentPos = 0;
           
-          // Go through oldDelta to find what was deleted
-          for (let i = 0; i < oldDelta.ops.length && remaining > 0; i++) {
-            const opOld = oldDelta.ops[i];
-            if (typeof opOld.insert === 'string') {
-              const opLength = opOld.insert.length;
+          // Collect all deleted text
+          for (const oldOp of oldContents.ops) {
+            if (!oldOp.insert) continue;
+            
+            const opLength = typeof oldOp.insert === 'string' ? oldOp.insert.length : 1;
+            const opEndPos = currentPos + opLength;
+            
+            // Check if this operation contains any part of the deletion
+            if (opEndPos > processedIndex && currentPos < processedIndex + deleteCount) {
+              const deleteStart = Math.max(0, processedIndex - currentPos);
+              const deleteEnd = Math.min(opLength, processedIndex + deleteCount - currentPos);
               
-              if (indexOld >= currentIndex && indexOld < currentIndex + opLength) {
-                const startWithinOp = indexOld - currentIndex;
-                const take = Math.min(opLength - startWithinOp, remaining);
-                deletedText += opOld.insert.substr(startWithinOp, take);
+              if (typeof oldOp.insert === 'string') {
+                const extracted = oldOp.insert.substring(deleteStart, deleteEnd);
+                // Check if this was previously highlighted as an addition
+                const wasAddition = oldOp.attributes && oldOp.attributes.background === '#cce8cc';
                 
-                // Check if this content had green highlight (was an addition)
-                if (opOld.attributes && opOld.attributes.background === '#cce8cc') {
-                  hasGreenHighlight = true;
+                if (!wasAddition) {
+                  deletedText += extracted;
                 }
-                
-                remaining -= take;
               }
-              currentIndex += opLength;
-            } else if (opOld.insert) {
-              // Handle embeds
-              if (indexOld === currentIndex && remaining > 0) {
-                deletedText += '\uFFFC';
-                remaining--;
-              }
-              currentIndex++;
             }
+            
+            currentPos = opEndPos;
+            if (currentPos >= processedIndex + deleteCount) break;
           }
           
-          // Only insert deleted text as strikethrough if it wasn't a green highlight (addition)
-          if (deletedText && !hasGreenHighlight) {
-            highlighted.insert(deletedText, { strike: true, color: '#C62828', background: '#FFCDD2' });
+          // Insert deleted text with strikethrough
+          if (deletedText) {
+            highlighted.insert(deletedText, { 
+              strike: true, 
+              color: '#C62828', 
+              background: '#FFCDD2' 
+            });
           }
-          indexOld += op.delete;
+          
+          processedIndex += op.delete;
         }
       });
-      // Preserve cursor position
+      
+      // Apply the changes
       const selection = this.quill.getSelection();
-      // Apply the highlighted diff to the newDelta correctly
-      const result = newDelta.compose(highlighted);
-      this.quill.setContents(result);
+      const result = newContents.compose(highlighted);
+      this.quill.setContents(result, 'silent');
+      
+      // Restore selection
       if (selection) {
         this.quill.setSelection(selection.index, selection.length, 'silent');
       }
+      
       this.lastDelta = this.quill.getContents();
-      console.log('[TrackChanges] Applied Delta.diff with true redline highlights.');
     } finally {
       this.isProcessingChange = false;
     }
@@ -226,6 +262,8 @@ export class TrackChanges implements TrackChangesPlugin {
   public enable(): void {
     if (!this.enabled) {
       this.enabled = true;
+      // Re-attach the event handler
+      this.quill.on('text-change', this.textChangeHandler);
       // Remove the CSS class that hides deleted content
       const editor = this.quill.container.querySelector('.ql-editor');
       if (editor) {
@@ -238,6 +276,8 @@ export class TrackChanges implements TrackChangesPlugin {
   public disable(): void {
     if (this.enabled) {
       this.enabled = false;
+      // Remove the event handler to stop tracking
+      this.quill.off('text-change', this.textChangeHandler);
       // Add CSS class to hide deleted content
       const editor = this.quill.container.querySelector('.ql-editor');
       if (editor) {
@@ -301,7 +341,8 @@ export class TrackChanges implements TrackChangesPlugin {
   }
 
   public processDelta(): void {
-    this.handleTextChange();
+    // This method is called manually, so we simulate a user change
+    this.handleTextChange(null, null, 'user');
   }
 
   public updateOptions(options: Partial<TrackChangesOptions>): void {
@@ -334,13 +375,5 @@ export class TrackChanges implements TrackChangesPlugin {
     if (this.options.onChangesUpdate) {
       this.options.onChangesUpdate(this.getChanges());
     }
-  }
-
-  public undo(): void {
-    // Not implemented for Delta-based diffing
-  }
-
-  public redo(): void {
-    // Not implemented for Delta-based diffing
   }
 } 
