@@ -165,6 +165,14 @@ export const Editor: React.FC<EditorProps> = React.forwardRef<EditorRef, EditorP
   const [localAutosave, setLocalAutosave] = useState(false);
   const [localEnableMarkdown, setLocalEnableMarkdown] = useState(false);
 
+  // Sync local states with props
+  useEffect(() => {
+    setLocalShowLineNumbers(showLineNumbers);
+    setLocalTrackChanges(trackChanges);
+    setLocalAutosave(autosave);
+    setLocalEnableMarkdown(enableMarkdown);
+  }, [showLineNumbers, trackChanges, autosave, enableMarkdown]);
+
   // Initialize Quill editor
   useEffect(() => {
     if (editorRef.current && !quillRef.current) {
